@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { Typewriter } from "@/components/ui/typewriter";
 import heroImg from "@/hero-sunset.jpg";
 import dishSeafood from "@/dish-seafood.jpg";
 import dishPaella from "@/dish-paella.jpg";
@@ -79,8 +80,31 @@ export function Home() {
           >
             {t("hero.title")}
           </motion.h1>
+          <motion.div
+            className="mt-3 flex h-[1.6em] items-center"
+            initial={reduce ? {} : { opacity: 0 }}
+            animate={reduce ? {} : { opacity: 1 }}
+            transition={{ delay: 0.9, duration: 0.5 }}
+            aria-hidden="true"
+          >
+            <Typewriter
+              words={[
+                "Mediterranean cuisine · Ibiza",
+                "Sea view dining",
+                "Sunset restaurant Ibiza",
+                "Romantic dinners",
+                "Open every day, 8:00 – 23:30",
+              ]}
+              typingSpeed={52}
+              deletingSpeed={28}
+              pauseAfterType={2400}
+              pauseAfterDelete={380}
+              className="text-[15px] font-light leading-none tracking-wide text-white/70"
+              cursorClassName="ml-px text-white/40 font-extralight"
+            />
+          </motion.div>
           <motion.p
-            className="mt-3 max-w-sm text-[15px] leading-snug text-white/85"
+            className="mt-2 max-w-sm text-[13px] leading-snug text-white/55"
             variants={heroText} initial="hidden" animate="visible"
             transition={{ delay: 0.6, duration: 0.65, ease: ease.expOut }}
           >
