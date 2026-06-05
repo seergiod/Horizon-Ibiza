@@ -1,0 +1,135 @@
+You are working on an existing codebase:
+
+https://github.com/seergiod/book-ibiza-now
+
+This is a high-conversion mobile restaurant reservation funnel for a premium Ibiza restaurant.
+
+Do NOT treat this as a demo or UI playground.
+
+Every change must improve:
+
+* reservation conversions
+* perceived luxury
+* mobile experience
+* loading speed
+
+⸻
+
+🎯 TASK
+
+Integrate a typewriter animation effect into the homepage hero section.
+
+The current hero headline (Mediterranean restaurant tagline) must be enhanced with a dynamic typewriter effect.
+
+Example intent:
+
+Static text → becomes dynamic emotional hook:
+“Mediterranean cuisine. Sea views. Sunset dining.”
+
+Animated words rotate using typewriter effect.
+
+⸻
+
+✨ IMPLEMENTATION
+
+You are provided with a Typewriter component (Framer Motion based).
+
+Add it to:
+
+/components/ui/typewriter.tsx
+
+Then integrate it into:
+
+/src/routes/index.tsx (hero section)
+
+⸻
+
+📍 WHERE TO PLACE IT
+
+Inside the homepage hero section:
+
+* Replace or enhance the subtitle under the main heading
+* Keep the main H1 static (do NOT break SEO)
+* Apply typewriter ONLY to supporting emotional text
+
+Example placement:
+
+H1:
+Horizon Ibiza
+
+Subtitle (typewriter effect):
+
+* “Mediterranean cuisine”
+* “Sea view dining”
+* “Sunset restaurant Ibiza”
+* “Romantic dinners”
+
+Loop continuously.
+
+⸻
+
+🎨 DESIGN RULES
+
+* Must feel premium and subtle (NOT flashy)
+* Use Framer Motion cursor effect
+* Cursor should be minimal (“|” or “_”)
+* Smooth timing (no fast blinking chaos)
+* Must match luxury Ibiza aesthetic
+
+⸻
+
+📱 MOBILE FIRST
+
+* No layout shift when text changes
+* No jump in hero height
+* Text must remain readable on small screens
+* Animation must not block CTA visibility
+
+⸻
+
+⚡ PERFORMANCE RULES
+
+* No impact on initial page load
+* Lazy animation start after hero render
+* Respect prefers-reduced-motion
+* Avoid re-renders or layout thrashing
+
+⸻
+
+🎯 CONVERSION RULES (IMPORTANT)
+
+Do NOT:
+
+* Replace reservation CTA
+* Add distractions above CTA
+* Reduce clarity of “Reserve a table” button
+
+DO:
+
+* Increase emotional engagement before CTA
+* Make the restaurant feel premium and alive
+* Guide user naturally toward reservation
+
+⸻
+
+🧠 BUSINESS GOAL
+
+This animation must increase:
+
+* time on hero section
+* emotional engagement
+* reservation clicks
+
+Not just visual appeal.
+
+⸻
+
+🚨 FINAL INSTRUCTION
+
+Implement clean production-ready code.
+
+No demo logic.
+No placeholder text.
+No unnecessary components.
+
+Integrate it directly into the existing architecture.
