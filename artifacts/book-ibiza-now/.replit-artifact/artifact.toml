@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Horizon Ibiza"
+version = "1.0.0"
+id = "artifacts/book-ibiza-now"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21110
+
+[services.development]
+run = "pnpm --filter @workspace/book-ibiza-now run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/book-ibiza-now", "run", "build" ]
+publicDir = "artifacts/book-ibiza-now/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21110"
+BASE_PATH = "/"
