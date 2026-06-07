@@ -1,0 +1,120 @@
+Actúa como un Senior Frontend Engineer, UI/UX Designer y especialista en diseño SaaS moderno.
+
+Analiza toda la aplicación existente y realiza una auditoría visual completa para detectar elementos que se vean poco profesionales, inconsistentes, desalineados, antiguos o visualmente pobres.
+
+OBJETIVO:
+Transformar toda la interfaz en una plataforma moderna, limpia, profesional y tecnológica utilizando una identidad visual basada en tonos azules.
+
+REQUISITOS DE DISEÑO:
+
+🎨 Nueva identidad visual
+- Sustituir cualquier color principal actual por una paleta basada en azul.
+- Mantener una apariencia premium tipo SaaS.
+- Inspirarse en productos modernos como Linear, Vercel, Stripe, Notion, GitHub, OpenAI y Raycast.
+- Mantener modo oscuro como principal.
+
+🎨 Paleta recomendada
+- Primary: #2563EB
+- Primary Hover: #1D4ED8
+- Secondary: #3B82F6
+- Accent: #60A5FA
+- Background: #0B1220
+- Surface: #111827
+- Border: rgba(255,255,255,0.08)
+- Text Primary: #FFFFFF
+- Text Secondary: #94A3B8
+
+✨ Mejoras visuales globales
+- Revisar TODOS los componentes.
+- Mejorar espaciados.
+- Mejorar márgenes.
+- Mejorar padding.
+- Unificar tamaños de fuente.
+- Corregir alineaciones.
+- Corregir elementos descuadrados.
+- Corregir elementos superpuestos.
+- Eliminar sombras anticuadas.
+- Aplicar sombras suaves y modernas.
+- Aplicar bordes redondeados consistentes.
+- Mejorar estados hover.
+- Mejorar estados focus.
+- Mejorar transiciones.
+
+📊 Dashboard
+- Hacer que las tarjetas parezcan más premium.
+- Añadir profundidad visual.
+- Añadir gradientes azules sutiles.
+- Mejorar métricas.
+- Mejorar iconografía.
+- Mejorar visualización de gráficos.
+- Hacer el dashboard más limpio y profesional.
+
+📦 Cards y widgets
+- Todas las cards deben tener:
+  - mismo estilo
+  - misma altura cuando corresponda
+  - misma separación
+  - bordes consistentes
+  - animaciones suaves
+
+🧭 Sidebar
+- Rediseñar completamente la sidebar.
+- Añadir indicador visual de página activa.
+- Mejorar iconos.
+- Mejorar hover.
+- Mejorar colapso responsive.
+- Mantener apariencia moderna y minimalista.
+
+🔘 Botones
+- Unificar todos los botones.
+- Crear variantes:
+  - Primary
+  - Secondary
+  - Ghost
+  - Danger
+- Animaciones suaves.
+- Hover consistente.
+- Focus accesible.
+
+📱 Responsive
+- Revisar todas las páginas.
+- Corregir errores en móvil.
+- Corregir errores en tablet.
+- Corregir overflows horizontales.
+- Corregir elementos que se salen de pantalla.
+- Garantizar diseño responsive real.
+
+⚡ Rendimiento
+- Eliminar CSS duplicado.
+- Eliminar estilos muertos.
+- Reutilizar componentes.
+- Optimizar renderizados innecesarios.
+
+🧩 Sistema de diseño
+Crear o mejorar:
+- Design Tokens
+- Variables globales
+- Sistema de colores
+- Sistema tipográfico
+- Sistema de espaciado
+- Sistema de sombras
+- Sistema de bordes
+
+🔍 Auditoría final
+Al terminar:
+1. Detectar automáticamente elementos visualmente inconsistentes.
+2. Corregirlos.
+3. Generar un informe con:
+   - problemas encontrados
+   - cambios realizados
+   - componentes mejorados
+   - archivos modificados
+
+IMPORTANTE:
+No romper funcionalidades existentes.
+No eliminar características.
+No modificar lógica de negocio.
+Solo mejorar experiencia visual, consistencia, accesibilidad, responsive y apariencia profesional.
+
+Objetivo final:
+Que la aplicación parezca un producto SaaS profesional valorado en miles de euros y no un proyecto académico.
