@@ -28,7 +28,7 @@ function toDateInput(d: Date) {
 const TIME_SLOTS = ["19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30"];
 
 const inputClass =
-  "h-12 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground placeholder:text-muted-foreground/50 transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:shadow-sm";
+  "h-12 w-full rounded-xl border border-input bg-white px-4 text-base text-foreground placeholder:text-muted-foreground/50 transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:shadow-sm";
 
 export function ReserveForm() {
   const { t, i18n } = useTranslation();
@@ -131,7 +131,11 @@ export function ReserveForm() {
               const active = partySize === n;
               return (
                 <motion.button type="button" key={n} onClick={() => setPartySize(n)}
-                  className={`h-12 rounded-xl border text-base font-semibold transition-colors ${active ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border bg-card text-foreground"}`}
+                  className={`h-12 rounded-xl border text-base font-semibold transition-colors ${
+                    active
+                      ? "border-primary bg-primary text-white shadow-sm"
+                      : "border-border bg-white text-foreground hover:border-primary/40 hover:bg-secondary"
+                  }`}
                   aria-pressed={active}
                   whileHover={reduce ? {} : { scale: active ? 1.04 : 1.06 }}
                   whileTap={reduce ? {} : { scale: 0.93 }}
@@ -173,7 +177,7 @@ export function ReserveForm() {
           </label>
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
             maxLength={300} rows={2} placeholder={t("reserve.notesPlaceholder")}
-            className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/50 transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+            className="w-full rounded-xl border border-input bg-white px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/50 transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
         </div>
       </StaggerItem>
       <AnimatePresence>
@@ -189,9 +193,9 @@ export function ReserveForm() {
       </AnimatePresence>
       <StaggerItem>
         <motion.button type="submit" disabled={submitting}
-          className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-full text-base font-semibold text-primary-foreground shadow-[var(--shadow-cta)] disabled:opacity-60"
+          className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-xl text-base font-semibold text-white shadow-[var(--shadow-cta)] disabled:opacity-60 transition-opacity hover:opacity-90"
           style={{ backgroundImage: "var(--gradient-sunset)" }}
-          whileHover={reduce || submitting ? {} : { scale: 1.01, boxShadow: "0 16px 40px -8px oklch(0.62 0.17 35 / 0.55)" }}
+          whileHover={reduce || submitting ? {} : { scale: 1.01 }}
           whileTap={reduce || submitting ? {} : { scale: 0.98 }}
           transition={{ duration: 0.15 }}
           onClick={(e) => onSubmit(e as unknown as React.FormEvent)}
