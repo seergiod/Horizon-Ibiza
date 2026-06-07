@@ -1,0 +1,66 @@
+Quiero que hagas una revisión completa del diseño porque actualmente muchos elementos transmiten una estética demasiado genérica y parecen generados automáticamente.
+
+NO quiero el típico estilo de botones, tarjetas y bordes que se ve en plantillas estándar o proyectos creados con IA.
+
+Objetivo:
+Conseguir una identidad visual propia, moderna y profesional, con personalidad, evitando completamente la apariencia "ChatGPT", "shadcn por defecto", "Tailwind básico" o "dashboard genérico".
+
+Cambios obligatorios:
+
+BOTONES
+- Rediseñar todos los botones.
+- Evitar botones rectangulares simples con fondo plano.
+- Crear botones con más personalidad.
+- Utilizar mejores proporciones.
+- Mejorar tipografía.
+- Mejorar espaciado interno.
+- Añadir microanimaciones elegantes.
+- Crear una jerarquía visual clara entre acciones primarias y secundarias.
+- Los botones deben sentirse como parte de un producto premium.
+
+BORDES
+- Revisar todos los bordes de la aplicación.
+- Eliminar los típicos bordes grises de 1px.
+- Sustituirlos por una combinación más sofisticada de profundidad, contraste, sombras suaves y separación visual.
+- Reducir el abuso de bordes cuando no aporten valor.
+- Hacer que las secciones se diferencien mediante composición visual, no únicamente mediante líneas.
+
+CARDS
+- Rediseñar completamente las tarjetas.
+- Evitar cajas genéricas con borde y sombra estándar.
+- Añadir sensación de capas y profundidad.
+- Mejorar la distribución del contenido.
+- Dar más protagonismo a la información importante.
+- Crear un estilo coherente y reconocible.
+
+IDENTIDAD VISUAL
+- Mantener la paleta azul pero construir una identidad única.
+- Crear una estética tecnológica premium.
+- Inspirarse en productos modernos de alto nivel, pero sin copiar su apariencia.
+- Priorizar elegancia, limpieza y personalidad.
+
+TIPOGRAFÍA
+- Mejorar pesos tipográficos.
+- Mejorar jerarquías visuales.
+- Mejorar títulos y subtítulos.
+- Ajustar tamaños donde sea necesario para dar más presencia al contenido.
+
+ESPACIADO
+- Revisar márgenes y paddings.
+- Eliminar zonas visualmente vacías o demasiado comprimidas.
+- Conseguir una sensación de diseño intencional y equilibrado.
+
+ANIMACIONES
+- Añadir transiciones suaves.
+- Añadir microinteracciones.
+- Mejorar feedback visual en hover, focus y estados activos.
+- Evitar animaciones exageradas.
+
+AUDITORÍA FINAL
+Al terminar, busca cualquier componente que siga teniendo apariencia genérica o de plantilla y rediséñalo para que encaje con la nueva identidad visual.
+
+No cambies funcionalidades.
+No cambies lógica.
+No elimines características.
+
+Tu prioridad absoluta es que la interfaz deje de parecer una plantilla genérica y pase a parecer un producto SaaS premium diseñado por un equipo profesional de UI/UX.

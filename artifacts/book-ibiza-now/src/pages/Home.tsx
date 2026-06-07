@@ -36,13 +36,14 @@ export function Home() {
   const signatures = MENU.slice(0, 3).map((dish, i) => ({ dish, img: SIGNATURES[i].img }));
 
   const trustItems = [
-    { label: t("trust.seaView"), icon: "🌊" },
-    { label: t("trust.sunsetTerrace"), icon: "🌅" },
-    { label: t("trust.whatsappConfirm"), icon: "⚡" },
+    { label: t("trust.seaView"), detail: "Figueretas · Ibiza" },
+    { label: t("trust.sunsetTerrace"), detail: "Every evening" },
+    { label: t("trust.whatsappConfirm"), detail: "Within 15 min" },
   ];
 
   return (
     <PageTransition>
+      {/* ── Hero ── */}
       <section ref={heroRef} className="relative overflow-hidden">
         <motion.div
           className="absolute inset-0 origin-center"
@@ -61,20 +62,20 @@ export function Home() {
             label="Image Coming Soon"
           />
         </motion.div>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/25 to-black/75" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/80" />
         <motion.div
           className="relative mx-auto flex min-h-[calc(100svh-3.5rem)] max-w-screen-md flex-col justify-end px-5 pb-10 pt-24 text-white"
           style={{ opacity: reduce ? 1 : heroOpacity }}
         >
           <motion.p
-            className="mb-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/75"
+            className="mb-3 text-[10px] font-semibold uppercase tracking-[0.32em] text-white/60"
             variants={heroText} initial="hidden" animate="visible"
             transition={{ delay: 0.2, duration: 0.6, ease: ease.expOut }}
           >
             {t("hero.eyebrow")}
           </motion.p>
           <motion.h1
-            className="font-display text-5xl leading-[0.95] tracking-tight text-balance sm:text-6xl"
+            className="text-5xl font-bold leading-[0.95] tracking-[-0.03em] text-balance sm:text-6xl"
             variants={heroText} initial="hidden" animate="visible"
             transition={{ delay: 0.4, duration: 0.75, ease: ease.expOut }}
           >
@@ -99,40 +100,48 @@ export function Home() {
               deletingSpeed={28}
               pauseAfterType={2400}
               pauseAfterDelete={380}
-              className="text-[15px] font-light leading-none tracking-wide text-white/70"
-              cursorClassName="ml-px text-white/40 font-extralight"
+              className="text-[15px] font-light leading-none tracking-wide text-white/65"
+              cursorClassName="ml-px text-white/35 font-extralight"
             />
           </motion.div>
           <motion.p
-            className="mt-2 max-w-sm text-[13px] leading-snug text-white/55"
+            className="mt-2 max-w-sm text-[13px] leading-relaxed text-white/50"
             variants={heroText} initial="hidden" animate="visible"
             transition={{ delay: 0.6, duration: 0.65, ease: ease.expOut }}
           >
             {t("hero.subtitle")}
           </motion.p>
           <motion.div
-            className="mt-6 flex flex-col gap-2.5 sm:flex-row"
+            className="mt-7 flex flex-col gap-3 sm:flex-row"
             initial={reduce ? {} : { opacity: 0, y: 16 }}
             animate={reduce ? {} : { opacity: 1, y: 0 }}
             transition={{ delay: 0.82, duration: 0.6, ease: ease.expOut }}
           >
             <motion.div whileHover={reduce ? {} : { scale: 1.02 }} whileTap={reduce ? {} : { scale: 0.97 }} transition={{ duration: 0.15 }}>
-              <Link to="/reserve" onClick={() => track("cta_reserve_click", { source: "hero_primary" })}
-                className="inline-flex h-14 w-full items-center justify-center rounded-full px-8 text-base font-semibold text-primary-foreground shadow-[var(--shadow-cta)] sm:w-auto"
-                style={{ backgroundImage: "var(--gradient-sunset)" }}>
+              <Link
+                to="/reserve"
+                onClick={() => track("cta_reserve_click", { source: "hero_primary" })}
+                className="inline-flex h-13 w-full items-center justify-center rounded-xl px-8 text-[15px] font-semibold text-white shadow-[var(--shadow-cta)] sm:w-auto"
+                style={{ backgroundImage: "var(--gradient-sunset)" }}
+              >
                 {t("cta.reserveNow")}
               </Link>
             </motion.div>
             <motion.div whileHover={reduce ? {} : { scale: 1.02 }} whileTap={reduce ? {} : { scale: 0.97 }} transition={{ duration: 0.15 }}>
-              <Link to="/menu" onClick={() => track("menu_view", { source: "hero" })}
-                className="inline-flex h-14 w-full items-center justify-center rounded-full border border-white/25 bg-white/10 px-8 text-base font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:w-auto">
+              <Link
+                to="/menu"
+                onClick={() => track("menu_view", { source: "hero" })}
+                className="inline-flex h-13 w-full items-center justify-center rounded-xl border border-white/20 bg-white/8 px-8 text-[15px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/15 sm:w-auto"
+              >
                 {t("cta.viewMenu")}
               </Link>
             </motion.div>
           </motion.div>
-          <motion.p className="mt-4 text-[12px] text-white/60"
+          <motion.p
+            className="mt-4 text-[11px] font-medium text-white/45 tracking-wide"
             initial={reduce ? {} : { opacity: 0 }} animate={reduce ? {} : { opacity: 1 }}
-            transition={{ delay: 1.1, duration: 0.5 }}>
+            transition={{ delay: 1.1, duration: 0.5 }}
+          >
             {t("hero.trustLine")}
           </motion.p>
         </motion.div>
@@ -140,14 +149,15 @@ export function Home() {
 
       <UrgencyStrip />
 
+      {/* ── Trust features ── */}
       <section className="px-5 pt-8">
         <div className="mx-auto max-w-screen-md">
           <Stagger className="grid grid-cols-3 gap-3">
-            {trustItems.map(({ label, icon }) => (
+            {trustItems.map(({ label, detail }) => (
               <StaggerItem key={label}>
-                <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/50 bg-card px-2 py-4 text-center transition-colors hover:bg-secondary/60">
-                  <span className="text-2xl leading-none">{icon}</span>
-                  <span className="text-[11px] font-semibold leading-tight text-foreground/80">{label}</span>
+                <div className="flex flex-col gap-1 rounded-2xl bg-secondary/70 px-3 py-4 text-center transition-colors hover:bg-secondary">
+                  <span className="text-[11px] font-bold leading-tight text-foreground">{label}</span>
+                  <span className="text-[10px] text-muted-foreground leading-snug">{detail}</span>
                 </div>
               </StaggerItem>
             ))}
@@ -155,20 +165,24 @@ export function Home() {
         </div>
       </section>
 
-      <section className="px-5 pt-10">
+      {/* ── Signature dishes ── */}
+      <section className="px-5 pt-12">
         <div className="mx-auto max-w-screen-md">
           <Reveal>
-            <h2 className="font-display text-4xl text-foreground">{t("signature.title")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("signature.subtitle")}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary mb-2">
+              Signature dishes
+            </p>
+            <h2 className="text-4xl font-bold tracking-tight text-foreground">{t("signature.title")}</h2>
+            <p className="mt-2 text-[15px] text-muted-foreground">{t("signature.subtitle")}</p>
           </Reveal>
-          <Stagger className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Stagger className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
             {signatures.map(({ dish, img }) => (
               <StaggerItem key={dish.id}>
-                <article className="group overflow-hidden rounded-2xl border border-border/50 bg-card transition-shadow hover:shadow-lg">
+                <article className="group overflow-hidden rounded-2xl bg-card shadow-[0_2px_12px_0_oklch(0.52_0.24_263_/_0.07)]">
                   <div className="aspect-[4/3] overflow-hidden">
                     <motion.div
-                      whileHover={reduce ? {} : { scale: 1.05 }}
-                      transition={{ duration: 0.6, ease: ease.out }}
+                      whileHover={reduce ? {} : { scale: 1.06 }}
+                      transition={{ duration: 0.55, ease: ease.out }}
                       className="h-full w-full"
                     >
                       <ImageWithFallback
@@ -183,53 +197,68 @@ export function Home() {
                     </motion.div>
                   </div>
                   <div className="p-4">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <h3 className="font-display text-xl text-foreground leading-tight">{dish.name}</h3>
-                      <span className="shrink-0 text-sm font-semibold text-primary">€{dish.price}</span>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h3 className="text-[17px] font-bold text-foreground leading-tight tracking-tight">{dish.name}</h3>
+                      <span className="shrink-0 text-[15px] font-bold text-primary">€{dish.price}</span>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{dish.description}</p>
+                    <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">{dish.description}</p>
                   </div>
                 </article>
               </StaggerItem>
             ))}
           </Stagger>
           <Reveal delay={0.1} className="mt-5">
-            <Link to="/menu" className="inline-flex items-center gap-1 text-sm font-semibold text-primary transition-opacity hover:opacity-70"
-              onClick={() => track("menu_view", { source: "signature_section" })}>
-              {t("cta.viewMenu")} →
+            <Link
+              to="/menu"
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary transition-opacity hover:opacity-70"
+              onClick={() => track("menu_view", { source: "signature_section" })}
+            >
+              {t("cta.viewMenu")}
+              <span className="text-[11px]">→</span>
             </Link>
           </Reveal>
         </div>
       </section>
 
-      <section className="px-5 pt-10">
+      {/* ── Sea view parallax ── */}
+      <section className="px-5 pt-12">
         <div className="mx-auto max-w-screen-md">
           <SeaViewParallax img={seaViewImg} t={t} reduce={reduce} />
         </div>
       </section>
 
+      {/* ── Gallery ── */}
       <section className="pt-0">
-        <StickyScrollGallery title="Experience Horizon Ibiza" />
+        <StickyScrollGallery />
       </section>
 
-      <section className="px-5 pt-10">
+      {/* ── Bottom CTA ── */}
+      <section className="px-5 pt-12 pb-12">
         <Reveal className="mx-auto max-w-screen-md">
-          <div className="overflow-hidden rounded-3xl p-8 text-center text-primary-foreground"
-            style={{ backgroundImage: "var(--gradient-sky)" }}>
-            <p className="font-display text-3xl">{t("urgency.bookFast")}</p>
-            <p className="mt-2 text-sm text-white/80">{t("hero.ctaSubline")}</p>
-            <motion.div className="mt-5 inline-block"
-              whileHover={reduce ? {} : { scale: 1.03 }} whileTap={reduce ? {} : { scale: 0.97 }}
-              transition={{ duration: 0.15 }}>
-              <Link to="/reserve" onClick={() => track("cta_reserve_click", { source: "bottom_cta" })}
-                className="inline-flex h-14 items-center justify-center rounded-full bg-white px-8 text-base font-semibold text-primary shadow-md transition-shadow hover:shadow-lg">
+          <div
+            className="overflow-hidden rounded-2xl p-8 text-center text-white"
+            style={{ backgroundImage: "var(--gradient-sky)" }}
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/60 mb-3">Reserve now</p>
+            <p className="text-3xl font-bold tracking-tight">{t("urgency.bookFast")}</p>
+            <p className="mt-2 text-[14px] text-white/70 leading-relaxed">{t("hero.ctaSubline")}</p>
+            <motion.div
+              className="mt-6 inline-block"
+              whileHover={reduce ? {} : { scale: 1.03 }}
+              whileTap={reduce ? {} : { scale: 0.97 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Link
+                to="/reserve"
+                onClick={() => track("cta_reserve_click", { source: "bottom_cta" })}
+                className="inline-flex h-13 items-center justify-center rounded-xl bg-white px-8 text-[15px] font-bold text-primary shadow-lg transition-shadow hover:shadow-xl"
+              >
                 {t("cta.reserveNow")}
               </Link>
             </motion.div>
           </div>
         </Reveal>
       </section>
-      <div className="pb-12" />
     </PageTransition>
   );
 }
@@ -241,7 +270,7 @@ function SeaViewParallax({ img, t, reduce }: { img: string; t: (key: string) => 
 
   return (
     <ImageReveal>
-      <div ref={ref} className="relative overflow-hidden rounded-3xl">
+      <div ref={ref} className="relative overflow-hidden rounded-2xl">
         <motion.div style={{ y: reduce ? 0 : y, scale: 1.15 }} className="w-full">
           <ImageWithFallback
             src={img}
@@ -253,11 +282,12 @@ function SeaViewParallax({ img, t, reduce }: { img: string; t: (key: string) => 
             label="Image Coming Soon"
           />
         </motion.div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 px-6 pb-6 text-white">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 px-6 pb-7 text-white">
           <Reveal>
-            <p className="font-display text-3xl">{t("hero.seaViewFeature")}</p>
-            <p className="mt-1 text-sm text-white/80">{t("hero.seaViewSub")}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/55 mb-1">Sea view</p>
+            <p className="text-3xl font-bold tracking-tight">{t("hero.seaViewFeature")}</p>
+            <p className="mt-1.5 text-[13px] text-white/70">{t("hero.seaViewSub")}</p>
           </Reveal>
         </div>
       </div>
