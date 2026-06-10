@@ -64,10 +64,22 @@ REGLAS:
 FORMATO ESTRICTO:
 [{"empleado": "Nombre", "dia": "lunes", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "sala mañana/cocina/etc"}]`;
 
-    const result = await model.generateContent([
+    // Race the Gemini call against a 55-second timeout so we always respond
+    // before the Replit proxy (60 s) cuts the connection and returns a 502.
+    const TIMEOUT_MS = 55_000;
+
+    const geminiCall = model.generateContent([
       { inlineData: { mimeType, data: base64 } },
       { text: PROMPT },
     ]);
+
+    const timeoutPromise = new Promise<never>((_resolve, reject) => {
+      setTimeout(() => {
+        reject(new Error("Gemini tardó demasiado (>55 s). Prueba con una imagen más pequeña o inténtalo de nuevo."));
+      }, TIMEOUT_MS);
+    });
+
+    const result = await Promise.race([geminiCall, timeoutPromise]);
 
     const rawText = result.response.text() ?? "";
     logger.info({ rawLength: rawText.length }, "Respuesta recibida de Gemini");
