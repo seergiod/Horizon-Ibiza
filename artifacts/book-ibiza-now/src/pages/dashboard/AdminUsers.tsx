@@ -12,29 +12,75 @@ const ESTADO_COLORS = {
 
 const EMPTY = { nombre: "", apellidos: "", dni: "", email: "", username: "", telefono: "", password: "", rol: "empleado" as "admin" | "empleado", estado: "activo" as "activo" | "inactivo" };
 
+const PHONE_RE = /^\+?[\d\s\-().]{6,25}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateUser(f: typeof EMPTY, isEdit: boolean) {
+  const errs: Record<string, string> = {};
+  if (!f.nombre.trim())              errs.nombre   = "El nombre es obligatorio";
+  if (!f.email.trim())               errs.email    = "El email es obligatorio";
+  else if (!EMAIL_RE.test(f.email))  errs.email    = "Introduce un email válido (con @)";
+  if (!f.username.trim())            errs.username  = "El usuario es obligatorio";
+  else if (f.username.trim().length < 2) errs.username = "Mínimo 2 caracteres";
+  const tel = f.telefono.trim();
+  if (tel && !PHONE_RE.test(tel))    errs.telefono = "Formato inválido (ej: +34 612 345 678)";
+  if (!isEdit && !f.password)        errs.password  = "La contraseña es obligatoria";
+  else if (f.password && f.password.length < 6) errs.password = "Mínimo 6 caracteres";
+  return errs;
+}
+
+function UField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">{label}</label>
+      {children}
+      {error && <span className="text-[10px] text-red-400 font-medium">{error}</span>}
+    </div>
+  );
+}
+
 function UserModal({ user, onClose, onSaved }: {
   user: Partial<DashUser & { password: string }> | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const isEdit = !!user?.id;
-  const [form, setForm] = useState({ ...EMPTY, ...(user ?? {}) });
+  const [form, setForm] = useState<typeof EMPTY>({ ...EMPTY, ...(user ?? {}) });
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+  const [error,   setError]   = useState("");
+
+  const fieldErrors = validateUser(form, isEdit);
+
+  function set(k: string, v: unknown) {
+    setForm(f => ({ ...f, [k]: v }));
+    setTouched(t => ({ ...t, [k]: true }));
+  }
+  function err(k: string) { return touched[k] ? fieldErrors[k] : undefined; }
+
   const inp = "rounded-lg px-3 py-2 text-sm text-white outline-none w-full";
-  const sty = { background: "#162040", border: "1px solid rgba(255,255,255,0.1)" };
+  const sty = (field: string) => ({
+    background: "#162040",
+    border: `1px solid ${touched[field] && fieldErrors[field] ? "rgba(248,113,113,0.5)" : "rgba(255,255,255,0.1)"}`,
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const allTouched = Object.fromEntries(["nombre", "email", "username", "telefono", "password"].map(k => [k, true]));
+    setTouched(allTouched);
+    if (Object.keys(fieldErrors).length > 0) return;
     setLoading(true); setError("");
     try {
       if (isEdit) {
-        const patch: Record<string, unknown> = { nombre: form.nombre, apellidos: form.apellidos, dni: form.dni || undefined, email: form.email, username: form.username, telefono: form.telefono || undefined, rol: form.rol, estado: form.estado };
+        const patch: Record<string, unknown> = {
+          nombre: form.nombre, apellidos: form.apellidos,
+          dni: form.dni || undefined, email: form.email,
+          username: form.username, telefono: form.telefono || undefined,
+          rol: form.rol, estado: form.estado,
+        };
         if (form.password) patch.password = form.password;
         await updateUser(user!.id!, patch as Parameters<typeof updateUser>[1]);
       } else {
-        if (!form.password) { setError("Contraseña requerida"); setLoading(false); return; }
         await createUser(form);
       }
       onSaved();
@@ -53,17 +99,61 @@ function UserModal({ user, onClose, onSaved }: {
         </div>
         {error && <div className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">{error}</div>}
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Nombre *</label><input required className={inp} style={sty} value={form.nombre} onChange={e => set("nombre", e.target.value)} /></div>
-          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Apellidos</label><input className={inp} style={sty} value={form.apellidos} onChange={e => set("apellidos", e.target.value)} /></div>
-          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">DNI</label><input className={inp} style={sty} value={form.dni} onChange={e => set("dni", e.target.value)} placeholder="12345678A" /></div>
-          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Teléfono</label><input className={inp} style={sty} value={form.telefono} onChange={e => set("telefono", e.target.value)} /></div>
-          <div className="col-span-2 flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Email *</label><input required type="email" className={inp} style={sty} value={form.email} onChange={e => set("email", e.target.value)} /></div>
-          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Usuario *</label><input required className={inp} style={sty} value={form.username} onChange={e => set("username", e.target.value)} /></div>
-          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Contraseña {isEdit ? "(dejar vacío)" : "*"}</label><input type="password" className={inp} style={sty} value={(form as typeof EMPTY).password} onChange={e => set("password", e.target.value)} placeholder={isEdit ? "Sin cambios" : "Mínimo 6 caracteres"} /></div>
-          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Rol</label><select className={inp} style={sty} value={form.rol} onChange={e => set("rol", e.target.value)}><option value="empleado">Empleado</option><option value="admin">Admin</option></select></div>
-          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Estado</label><select className={inp} style={sty} value={form.estado} onChange={e => set("estado", e.target.value)}><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select></div>
+          <UField label="Nombre *" error={err("nombre")}>
+            <input className={inp} style={sty("nombre")} value={form.nombre}
+              onChange={e => set("nombre", e.target.value)}
+              onBlur={() => setTouched(t => ({ ...t, nombre: true }))} />
+          </UField>
+          <UField label="Apellidos">
+            <input className={inp} style={sty("apellidos")} value={form.apellidos}
+              onChange={e => set("apellidos", e.target.value)} />
+          </UField>
+          <UField label="DNI">
+            <input className={inp} style={sty("dni")} value={form.dni}
+              placeholder="12345678A" onChange={e => set("dni", e.target.value)} />
+          </UField>
+          <UField label="Teléfono" error={err("telefono")}>
+            <input className={inp} style={sty("telefono")} value={form.telefono}
+              placeholder="+34 612 345 678"
+              onChange={e => set("telefono", e.target.value)}
+              onBlur={() => setTouched(t => ({ ...t, telefono: true }))} />
+          </UField>
           <div className="col-span-2">
-            <button type="submit" disabled={loading} className="w-full rounded-xl py-3 text-sm font-bold text-white disabled:opacity-40" style={{ background: "linear-gradient(135deg,#06b6d4,#2563eb)" }}>{loading ? "Guardando…" : (isEdit ? "Actualizar" : "Crear usuario")}</button>
+            <UField label="Email *" error={err("email")}>
+              <input type="email" className={inp} style={sty("email")} value={form.email}
+                onChange={e => set("email", e.target.value)}
+                onBlur={() => setTouched(t => ({ ...t, email: true }))} />
+            </UField>
+          </div>
+          <UField label="Usuario *" error={err("username")}>
+            <input className={inp} style={sty("username")} value={form.username}
+              onChange={e => set("username", e.target.value)}
+              onBlur={() => setTouched(t => ({ ...t, username: true }))} />
+          </UField>
+          <UField label={`Contraseña${isEdit ? " (dejar vacío)" : " *"}`} error={err("password")}>
+            <input type="password" className={inp} style={sty("password")} value={form.password}
+              placeholder={isEdit ? "Sin cambios" : "Mínimo 6 caracteres"}
+              onChange={e => set("password", e.target.value)}
+              onBlur={() => setTouched(t => ({ ...t, password: true }))} />
+          </UField>
+          <UField label="Rol">
+            <select className={inp} style={sty("rol")} value={form.rol} onChange={e => set("rol", e.target.value)}>
+              <option value="empleado">Empleado</option>
+              <option value="admin">Admin</option>
+            </select>
+          </UField>
+          <UField label="Estado">
+            <select className={inp} style={sty("estado")} value={form.estado} onChange={e => set("estado", e.target.value)}>
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </UField>
+          <div className="col-span-2">
+            <button type="submit" disabled={loading}
+              className="w-full rounded-xl py-3 text-sm font-bold text-white disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg,#06b6d4,#2563eb)" }}>
+              {loading ? "Guardando…" : (isEdit ? "Actualizar" : "Crear usuario")}
+            </button>
           </div>
         </form>
       </div>

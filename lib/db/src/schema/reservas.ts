@@ -34,7 +34,21 @@ export const reservasTable = pgTable("reservas", {
   idxEstadoFecha:   index("idx_estado_fecha").on(table.estado, table.fecha_reserva),
 }));
 
-export const insertReservaSchema = createInsertSchema(reservasTable).omit({
+const trimStr = (s: string) => s.trim();
+
+export const insertReservaSchema = createInsertSchema(reservasTable, {
+  cliente:       s => s.min(1, "El nombre del cliente es obligatorio").transform(trimStr),
+  fecha_reserva: s => s.min(1, "La fecha es obligatoria").transform(trimStr),
+  hora_reserva:  s => s.min(1, "La hora es obligatoria").transform(trimStr),
+  telefono:      s => s
+    .transform(trimStr)
+    .refine(v => v.length >= 6, "El teléfono debe tener al menos 6 dígitos")
+    .refine(v => /^\+?[\d\s\-().]{6,25}$/.test(v), "Formato de teléfono inválido (ej: +34 6XX XXX XXX)"),
+  comentarios:   s => s.transform(trimStr).optional().nullable(),
+  zona:          s => s.transform(trimStr).optional().nullable(),
+  vista:         s => s.transform(trimStr).optional().nullable(),
+  fuente:        s => s.transform(trimStr).optional().nullable(),
+}).omit({
   id: true,
   fecha_creacion: true,
 });

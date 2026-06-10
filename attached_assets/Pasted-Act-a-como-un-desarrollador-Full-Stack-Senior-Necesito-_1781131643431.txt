@@ -1,0 +1,43 @@
+Actúa como un desarrollador Full-Stack Senior. Necesito aplicar una actualización mayor al proyecto "Horizon-Ibiza" (https://github.com/seergiod/Horizon-Ibiza.git) para profesionalizar la gestión de datos y seguridad.
+
+Por favor, implementa estos 4 módulos de golpe:
+
+1. PROCESAMIENTO DE IMAGEN "A PRUEBA DE FALLOS":
+   - Middleware de imagen (sharp):
+     - Redimensionar a máximo 2500px.
+     - Conversión a escala de grises + filtro `.sharpen()`.
+     - Exportación a WebP calidad 85%.
+   - Aumentar `server.setTimeout(60000)` para evitar errores 502 durante el análisis de Gemini.
+
+2. EXTRACCIÓN DE DATOS CON "CERO ERRORES":
+   - Usa el siguiente prompt estricto para Gemini:
+     """
+     Analiza este cuadrante. Devuelve ÚNICAMENTE un JSON sin bloques markdown.
+     REGLAS:
+     - NOMBRES ÚNICOS: Siempre 'Nombre (Sección)'. Ejemplo: 'Sergio (sala tarde)', 'Sergio (piscina)'.
+     - Celdas 'X': estado 'vacaciones', inicio/fin vacíos.
+     - Celdas 'LIBRE': estado 'libre', inicio/fin vacíos.
+     - Celdas con horas: estado 'trabaja', extrae inicio/fin (HH:MM).
+     - ANÁLISIS: Procesa columna a columna. No generalices horarios entre columnas.
+     FORMATO: [{"empleado": "Nombre (Seccion)", "dia": "lunes", "inicio": "HH:MM", "fin": "HH:MM", "estado": "...", "seccion": "..."}]
+     """
+
+3. PANEL DE CONTROL Y MÉTRICAS:
+   - Crea un middleware que registre cada "VISITA_WEB" y cada "NOTIFICACION_ENVIADA" (con el nombre del empleado).
+   - Crea un endpoint `/api/admin/metrics` que devuelva el total de visitas, ranking de empleados notificados y últimas 10 acciones.
+   - Añade una nueva vista en el frontend llamada "Dashboard" que muestre estos datos.
+
+4. SEGURIDAD Y VALIDACIÓN DE DATOS (JOI/ZOD):
+   - Implementa esquemas de validación estrictos en el backend:
+     - Todos los campos obligatorios (NotNull/NotEmpty + .trim()).
+     - Fechas: inicio < fin.
+     - Emails: con '@'.
+     - Teléfonos: formato '+XXXXXXXX'.
+     - Error 400 automático si la validación falla.
+   - Frontend: bloquea el botón "Guardar" si hay campos vacíos o inválidos, mostrando mensajes de error.
+
+5. NOTIFICACIONES WHATSAPP GRATUITAS:
+   - Elimina cualquier rastro de Twilio.
+   - Lógica frontend: window.open('https://wa.me/numero?text=texto_codificado').
+
+Aplica estos cambios de forma ordenada, priorizando que el servidor no caiga y que la validación de datos sea robusta. Confírmame qué archivos has modificado al terminar.

@@ -14,14 +14,19 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 
 router.use(requireAuth);
 
+const phoneRegex = /^\+?[\d\s\-().]{6,25}$/;
+
 const createUserSchema = z.object({
-  nombre:    z.string().min(1),
-  apellidos: z.string().default(""),
-  dni:       z.string().optional().nullable(),
-  email:     z.string().email(),
-  username:  z.string().min(2),
-  telefono:  z.string().optional().nullable(),
-  password:  z.string().min(6),
+  nombre:    z.string().min(1, "El nombre es obligatorio").transform(s => s.trim()),
+  apellidos: z.string().default("").transform(s => s.trim()),
+  dni:       z.string().transform(s => s.trim()).optional().nullable(),
+  email:     z.string().email("Introduce un email válido").transform(s => s.trim().toLowerCase()),
+  username:  z.string().min(2, "El usuario debe tener al menos 2 caracteres").transform(s => s.trim()),
+  telefono:  z.string()
+    .transform(s => s.trim())
+    .refine(v => !v || phoneRegex.test(v), "Formato de teléfono inválido (ej: +34 6XX XXX XXX)")
+    .optional().nullable(),
+  password:  z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
   rol:       z.enum(["admin", "empleado"]).default("empleado"),
   estado:    z.enum(["activo", "inactivo"]).default("activo"),
 });

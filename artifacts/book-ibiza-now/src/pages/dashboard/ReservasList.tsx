@@ -51,32 +51,146 @@ function WhatsAppModal({ onClose, onSave }: { onClose: () => void; onSave: (r: P
   );
 }
 
+/* ── Validation helpers ── */
+const PHONE_RE = /^\+?[\d\s\-().]{6,25}$/;
+
+function validateReserva(f: { cliente: string; fecha_reserva: string; hora_reserva: string; personas: number | string; telefono: string }) {
+  const errs: Record<string, string> = {};
+  if (!f.cliente.trim())        errs.cliente       = "El nombre del cliente es obligatorio";
+  if (!f.fecha_reserva)         errs.fecha_reserva = "La fecha es obligatoria";
+  if (!f.hora_reserva)          errs.hora_reserva  = "La hora es obligatoria";
+  const p = Number(f.personas);
+  if (!p || p < 1 || p > 30)   errs.personas      = "Entre 1 y 30 personas";
+  const tel = f.telefono.trim();
+  if (!tel)                     errs.telefono      = "El teléfono es obligatorio";
+  else if (!PHONE_RE.test(tel)) errs.telefono      = "Formato inválido (ej: +34 612 345 678)";
+  return errs;
+}
+
+/* ── Field wrapper ── */
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">{label}</label>
+      {children}
+      {error && <span className="text-[10px] text-red-400 font-medium">{error}</span>}
+    </div>
+  );
+}
+
 /* ── New/Edit Reservation Modal ── */
 function ReservaModal({ initial, onClose, onSaved }: { initial?: Partial<Reserva>; onClose: () => void; onSaved: (r: Reserva) => void }) {
-  const [form, setForm] = useState({ cliente: initial?.cliente ?? "", fecha_reserva: initial?.fecha_reserva ?? "", hora_reserva: initial?.hora_reserva ?? "20:00", personas: initial?.personas ?? 2, zona: initial?.zona ?? "", vista: initial?.vista ?? "", telefono: initial?.telefono ?? "", comentarios: initial?.comentarios ?? "", estado: (initial?.estado ?? "pendiente") as EstadoReserva, fuente: initial?.fuente ?? "manual" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+  const [form, setForm] = useState({
+    cliente:       initial?.cliente       ?? "",
+    fecha_reserva: initial?.fecha_reserva ?? "",
+    hora_reserva:  initial?.hora_reserva  ?? "20:00",
+    personas:      initial?.personas      ?? 2,
+    zona:          initial?.zona          ?? "",
+    vista:         initial?.vista         ?? "",
+    telefono:      initial?.telefono      ?? "",
+    comentarios:   initial?.comentarios   ?? "",
+    estado:        (initial?.estado       ?? "pendiente") as EstadoReserva,
+    fuente:        initial?.fuente        ?? "manual",
+  });
+  const [touched, setTouched]   = useState<Record<string, boolean>>({});
+  const [loading, setLoading]   = useState(false);
+  const [error,   setError]     = useState("");
+
+  const fieldErrors = validateReserva(form);
+  const hasErrors   = Object.keys(fieldErrors).length > 0;
+
+  function set(k: string, v: unknown) {
+    setForm(f => ({ ...f, [k]: v }));
+    setTouched(t => ({ ...t, [k]: true }));
+  }
+  function err(k: string) { return touched[k] ? fieldErrors[k] : undefined; }
+
   const inp = "rounded-lg px-3 py-2 text-sm text-white outline-none w-full";
-  const sty = { background: "#162040", border: "1px solid rgba(255,255,255,0.1)" };
+  const sty = (field: string) => ({
+    background: "#162040",
+    border: `1px solid ${touched[field] && fieldErrors[field] ? "rgba(248,113,113,0.5)" : "rgba(255,255,255,0.1)"}`,
+  });
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setTouched({ cliente: true, fecha_reserva: true, hora_reserva: true, personas: true, telefono: true });
+    if (hasErrors) return;
+    setLoading(true); setError("");
+    try {
+      const r = await createReserva({
+        ...form,
+        personas:    Number(form.personas),
+        zona:        form.zona        || null,
+        vista:       form.vista       || null,
+        comentarios: form.comentarios || null,
+        fuente:      form.fuente      || "manual",
+      });
+      onSaved(r); onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al guardar");
+    } finally { setLoading(false); }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ background: "rgba(0,0,0,0.7)" }}>
       <div className="w-full max-w-lg rounded-2xl p-6 flex flex-col gap-4 my-4" style={{ background: "#0f1d35", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="flex items-center justify-between"><div className="text-white font-bold text-lg">Nueva Reserva</div><button onClick={onClose} className="text-slate-400 hover:text-white text-xl">✕</button></div>
+        <div className="flex items-center justify-between">
+          <div className="text-white font-bold text-lg">Nueva Reserva</div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl">✕</button>
+        </div>
         {error && <div className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">{error}</div>}
-        <form onSubmit={async e => { e.preventDefault(); setLoading(true); setError(""); try { const r = await createReserva({ ...form, personas: Number(form.personas), zona: form.zona || null, vista: form.vista || null, comentarios: form.comentarios || null, fuente: form.fuente || "manual" }); onSaved(r); onClose(); } catch (err: unknown) { setError(err instanceof Error ? err.message : "Error"); } finally { setLoading(false); } }} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Cliente *</label><input required className={inp} style={sty} value={form.cliente} onChange={e => set("cliente", e.target.value)} /></div>
-            <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Fecha *</label><input required type="date" className={inp} style={sty} value={form.fecha_reserva} onChange={e => set("fecha_reserva", e.target.value)} /></div>
-            <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Hora *</label><input required type="time" className={inp} style={sty} value={form.hora_reserva} onChange={e => set("hora_reserva", e.target.value)} /></div>
-            <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Personas *</label><input required type="number" min="1" max="30" className={inp} style={sty} value={form.personas} onChange={e => set("personas", e.target.value)} /></div>
-            <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Teléfono *</label><input required className={inp} style={sty} value={form.telefono} onChange={e => set("telefono", e.target.value)} placeholder="+34 6XX XXX XXX" /></div>
-            <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Zona</label><input className={inp} style={sty} value={form.zona} onChange={e => set("zona", e.target.value)} /></div>
-            <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Vista</label><input className={inp} style={sty} value={form.vista} onChange={e => set("vista", e.target.value)} /></div>
-            <div className="col-span-2 flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Comentarios</label><textarea rows={2} className={`${inp} resize-none`} style={sty} value={form.comentarios} onChange={e => set("comentarios", e.target.value)} /></div>
-            <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Estado</label><select className={inp} style={sty} value={form.estado} onChange={e => set("estado", e.target.value)}>{Object.entries(ESTADO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+            <div className="col-span-2">
+              <Field label="Cliente *" error={err("cliente")}>
+                <input className={inp} style={sty("cliente")} value={form.cliente}
+                  onChange={e => set("cliente", e.target.value)}
+                  onBlur={() => setTouched(t => ({ ...t, cliente: true }))} />
+              </Field>
+            </div>
+            <Field label="Fecha *" error={err("fecha_reserva")}>
+              <input type="date" className={inp} style={sty("fecha_reserva")} value={form.fecha_reserva}
+                onChange={e => set("fecha_reserva", e.target.value)}
+                onBlur={() => setTouched(t => ({ ...t, fecha_reserva: true }))} />
+            </Field>
+            <Field label="Hora *" error={err("hora_reserva")}>
+              <input type="time" className={inp} style={sty("hora_reserva")} value={form.hora_reserva}
+                onChange={e => set("hora_reserva", e.target.value)}
+                onBlur={() => setTouched(t => ({ ...t, hora_reserva: true }))} />
+            </Field>
+            <Field label="Personas *" error={err("personas")}>
+              <input type="number" min="1" max="30" className={inp} style={sty("personas")} value={form.personas}
+                onChange={e => set("personas", e.target.value)}
+                onBlur={() => setTouched(t => ({ ...t, personas: true }))} />
+            </Field>
+            <Field label="Teléfono *" error={err("telefono")}>
+              <input className={inp} style={sty("telefono")} value={form.telefono}
+                placeholder="+34 612 345 678"
+                onChange={e => set("telefono", e.target.value)}
+                onBlur={() => setTouched(t => ({ ...t, telefono: true }))} />
+            </Field>
+            <Field label="Zona">
+              <input className={inp} style={sty("zona")} value={form.zona} onChange={e => set("zona", e.target.value)} />
+            </Field>
+            <Field label="Vista">
+              <input className={inp} style={sty("vista")} value={form.vista} onChange={e => set("vista", e.target.value)} />
+            </Field>
+            <div className="col-span-2">
+              <Field label="Comentarios">
+                <textarea rows={2} className={`${inp} resize-none`} style={sty("comentarios")} value={form.comentarios} onChange={e => set("comentarios", e.target.value)} />
+              </Field>
+            </div>
+            <Field label="Estado">
+              <select className={inp} style={sty("estado")} value={form.estado} onChange={e => set("estado", e.target.value)}>
+                {Object.entries(ESTADO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </Field>
           </div>
-          <button type="submit" disabled={loading} className="mt-2 rounded-xl py-3 text-sm font-bold text-white disabled:opacity-40" style={{ background: "linear-gradient(135deg,#06b6d4,#2563eb)" }}>{loading ? "Guardando…" : "Crear reserva"}</button>
+          <button type="submit" disabled={loading}
+            className="mt-2 rounded-xl py-3 text-sm font-bold text-white disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg,#06b6d4,#2563eb)" }}>
+            {loading ? "Guardando…" : "Crear reserva"}
+          </button>
         </form>
       </div>
     </div>
