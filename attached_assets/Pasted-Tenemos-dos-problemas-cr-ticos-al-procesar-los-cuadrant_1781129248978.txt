@@ -1,0 +1,33 @@
+Tenemos dos problemas críticos al procesar los cuadrantes de horarios con Gemini que necesitas solucionar de inmediato en el código: 
+1. La compresión de imagen actual difumina las líneas y la IA pierde datos, pero si no comprimimos, el servidor da timeout (502).
+2. Cuando hay empleados con el mismo nombre, el sistema borra a uno de ellos (probablemente por sobrescritura de claves en el código o porque la IA los fusiona).
+
+Por favor, reescribe las partes correspondientes del backend aplicando estas 4 soluciones exactas:
+
+1. OPTIMIZACIÓN DE IMAGEN MANTENIENDO LÍNEAS (SHARP/PILLOW):
+   - En el middleware de procesamiento de imagen, fija el redimensionado ('resize') a un ancho máximo de 2500 píxeles.
+   - Aplica conversión a escala de grises para eliminar el peso del color.
+   - Aplica un filtro de enfoque explícito (ej. `.sharpen()` en sharp) para que las líneas de la cuadrícula y el bolígrafo destaquen.
+   - Exporta a formato WebP ajustando la calidad a un 85%.
+
+2. PREVENCIÓN DE TIMEOUTS (502 BAD GATEWAY):
+   - Aumenta el tiempo de espera (timeout) del servidor web y de la petición a la API de Gemini (ej. `server.setTimeout(60000)` en Express). El backend debe aguantar al menos 60 segundos esperando la respuesta de la IA sin cortar la conexión.
+
+3. NUEVO PROMPT DE GEMINI (FORZANDO CLAVES ÚNICAS):
+   Actualiza las instrucciones que enviamos a la API de Gemini por estas:
+   """
+   Analiza este cuadrante de horarios de hostelería. Devuelve ÚNICAMENTE un array JSON válido sin bloques markdown (```json).
+   REGLAS CRÍTICAS:
+   - NOMBRES DUPLICADOS (CRÍTICO): Para evitar sobrescrituras en la base de datos, en el campo 'empleado' DEBES generar siempre un nombre compuesto uniendo el nombre del empleado y su sección entre paréntesis. Ejemplo: 'Sergio (sala mañana)' o 'Sergio (piscina)'. Aplica este formato a TODOS los empleados para garantizar strings únicos.
+   - Celda con 'X' o cruz: Significa ausencia. Setea estado: 'vacaciones', inicio: '', fin: ''.
+   - Celda 'LIBRE': Setea estado: 'libre', inicio: '', fin: ''.
+   - Celda con horas (Ej: 09:00 a 17:00): Setea estado: 'trabaja' y extrae las horas de inicio y fin (HH:MM).
+   FORMATO ESTRICTO:
+   [{"empleado": "Nombre (Seccion)", "dia": "lunes...", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "nombre seccion"}]
+   """
+
+4. CORRECCIÓN LÓGICA DE SOBRESCRITURA:
+   - Revisa la función (tanto en backend como en frontend) que itera sobre el JSON devuelto y renderiza o guarda los turnos. 
+   - Asegúrate de que NO se esté usando el nombre del empleado como clave única de un diccionario/objeto. Trata cada registro del JSON devuelto como una entrada independiente usando un índice (index) o un ID temporal autogenerado (UUID) para que no se pisen los datos.
+
+Aplica todos estos cambios y confirma cuando el servidor esté listo y reiniciado.

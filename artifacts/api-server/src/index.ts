@@ -10,6 +10,8 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) throw new Error(`Invalid PORT value: "${rawPort}"`);
 
 const server = http.createServer(app);
+// Allow long-running Gemini image analysis requests (120 s)
+server.setTimeout(120_000);
 initWebSocket(server);
 
 await seedDefaultUsers();

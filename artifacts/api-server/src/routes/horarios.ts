@@ -7,6 +7,7 @@ import multer from "multer";
 import { z } from "zod";
 import { logger } from "../lib/logger.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import sharp from "sharp";
 
 const router = Router();
 router.use(requireAuth);
@@ -64,31 +65,49 @@ const guardarVersionSchema = z.object({
 });
 
 /* ── Helper: process image with Gemini (runs in background) ── */
-async function processImageJob(jobId: string, base64: string, mimeType: string, apiKey: string) {
+async function processImageJob(jobId: string, rawBuffer: Buffer, apiKey: string) {
   const job = jobStore.get(jobId);
   if (!job) return;
 
   job.status = "processing";
+  job.message = "Optimizando imagen…";
+
+  // ── 1. Optimise image: resize, grayscale, sharpen, WebP 85% ──
+  let processedBuffer: Buffer;
+  try {
+    processedBuffer = await sharp(rawBuffer)
+      .resize({ width: 2500, withoutEnlargement: true })
+      .grayscale()
+      .sharpen()
+      .webp({ quality: 85 })
+      .toBuffer();
+  } catch (sharpErr) {
+    logger.warn({ jobId, sharpErr }, "sharp falló, usando imagen original");
+    processedBuffer = rawBuffer;
+  }
+
   job.message = "Analizando imagen con IA…";
 
-  const PROMPT = `Analiza este cuadrante de horarios de hostelería. Devuélveme ÚNICAMENTE un array JSON válido. Cero texto extra.
-REGLAS:
-- Nombres duplicados: NO fusiones empleados que se llamen igual si están en columnas/secciones distintas. Crea objetos separados diferenciados por su 'seccion'.
-- Celdas con "X" o "Cruz": Significa ausencia. Setea "estado": "vacaciones", "inicio": "", "fin": "".
-- Celdas con "LIBRE": Setea "estado": "libre", "inicio": "", "fin": "".
-- Celdas con Horario: Setea "estado": "trabaja" y extrae las horas (HH:MM).
+  const base64 = processedBuffer.toString("base64");
+
+  const PROMPT = `Analiza este cuadrante de horarios de hostelería. Devuelve ÚNICAMENTE un array JSON válido sin bloques markdown (\`\`\`json).
+REGLAS CRÍTICAS:
+- NOMBRES DUPLICADOS (CRÍTICO): Para evitar sobrescrituras en la base de datos, en el campo 'empleado' DEBES generar siempre un nombre compuesto uniendo el nombre del empleado y su sección entre paréntesis. Ejemplo: 'Sergio (sala mañana)' o 'Sergio (piscina)'. Aplica este formato a TODOS los empleados para garantizar strings únicos.
+- Celda con 'X' o cruz: Significa ausencia. Setea estado: 'vacaciones', inicio: '', fin: ''.
+- Celda 'LIBRE': Setea estado: 'libre', inicio: '', fin: ''.
+- Celda con horas (Ej: 09:00 a 17:00): Setea estado: 'trabaja' y extrae las horas de inicio y fin (HH:MM).
 - "dia" debe ser uno de: lunes, martes, miércoles, jueves, viernes, sábado, domingo
 - Cruza cuidadosamente cada fila (día) con cada columna (empleado)
 - Solo incluye filas con información real, no filas vacías
 FORMATO ESTRICTO:
-[{"empleado": "Nombre", "dia": "lunes", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "sala mañana/cocina/etc"}]`;
+[{"empleado": "Nombre (Seccion)", "dia": "lunes...", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "nombre seccion"}]`;
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const geminiCall = model.generateContent([
-      { inlineData: { mimeType: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: base64 } },
+      { inlineData: { mimeType: "image/webp", data: base64 } },
       { text: PROMPT },
     ]);
 
@@ -161,8 +180,6 @@ router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), 
   }
 
   const jobId = crypto.randomUUID();
-  const base64 = req.file.buffer.toString("base64");
-  const mimeType = req.file.mimetype || "image/jpeg";
 
   jobStore.set(jobId, {
     status: "pending",
@@ -171,7 +188,7 @@ router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), 
   });
 
   // Fire and forget — client polls for result
-  processImageJob(jobId, base64, mimeType, apiKey);
+  processImageJob(jobId, req.file.buffer, apiKey);
 
   res.json({ jobId });
 });
