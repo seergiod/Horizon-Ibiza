@@ -12,6 +12,7 @@
     "test:watch": "node --test tests/**/*.test.ts --loader ts-node/esm --watch"
   },
   "dependencies": {
+    "@huggingface/inference": "^4.13.18",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "bcryptjs": "^3.0.3",
