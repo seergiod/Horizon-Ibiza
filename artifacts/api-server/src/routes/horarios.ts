@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { db, horarioVersionesTable, turnosTable, usersTable } from "@workspace/db";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
-import { respondError, Errors, AppError } from "../lib/errors.js";
+import { respondError, Errors } from "../lib/errors.js";
 import multer from "multer";
 import { z } from "zod";
 import { logger } from "../lib/logger.js";
+import { InferenceClient } from "@huggingface/inference";
 
 const router = Router();
 router.use(requireAuth);
@@ -29,6 +30,85 @@ const guardarVersionSchema = z.object({
   nombre:        z.string().optional(),
   notas:         z.string().optional(),
   turnos:        z.array(turnoSchema).min(1),
+});
+
+/* ── POST /api/horarios/procesar-imagen ── admin only ── */
+router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: "No se recibió ninguna imagen" });
+    return;
+  }
+
+  const apiKey = process.env.HUGGINGFACE_API_KEY;
+  if (!apiKey) {
+    res.status(500).json({ error: "HUGGINGFACE_API_KEY no configurada" });
+    return;
+  }
+
+  try {
+    const base64 = req.file.buffer.toString("base64");
+    const mimeType = req.file.mimetype || "image/jpeg";
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+
+    const client = new InferenceClient(apiKey);
+
+    const PROMPT = `Analiza esta imagen de un cuadrante de horarios de hostelería. Extrae los turnos de cada empleado y devuélveme ÚNICAMENTE un array JSON válido, sin bloques de código markdown, sin texto extra, solo el JSON limpio con este formato:
+[
+  {
+    "empleado": "Nombre",
+    "dia": "lunes/martes/miércoles/jueves/viernes/sábado/domingo",
+    "inicio": "HH:MM",
+    "fin": "HH:MM",
+    "estado": "trabaja/libre",
+    "seccion": "Nombre de la sección/zona"
+  }
+]
+Cruza con cuidado la fila del día con la columna del empleado. Si la celda dice 'LIBRE', pon el estado como 'libre' y deja las horas vacías (""). Si la celda tiene un horario tipo 08:00-16:00 o 08:00/16:00, pon estado como 'trabaja'. Solo incluye filas donde hay información real.`;
+
+    const chatResponse = await client.chatCompletion({
+      model: "Qwen/Qwen2-VL-7B-Instruct",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "image_url", image_url: { url: dataUrl } },
+            { type: "text", text: PROMPT },
+          ],
+        },
+      ],
+      max_tokens: 4096,
+    });
+
+    const rawText = chatResponse.choices?.[0]?.message?.content ?? "";
+    logger.info({ rawLength: rawText.length }, "Respuesta recibida de Hugging Face");
+
+    // Extraer JSON limpio (por si el modelo añade algo extra)
+    const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      logger.warn({ rawText }, "No se encontró JSON en la respuesta");
+      res.status(422).json({ error: "El modelo no devolvió JSON válido", raw: rawText });
+      return;
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Normalizar al formato que espera el frontend
+    const turnos = (parsed as Array<Record<string, string>>).map(t => ({
+      empleado_nombre: (t.empleado ?? t.empleado_nombre ?? "").toString().trim(),
+      dia:             (t.dia ?? "").toString().toLowerCase().trim(),
+      hora_inicio:     (t.inicio ?? t.hora_inicio ?? "").toString().trim() || null,
+      hora_fin:        (t.fin ?? t.hora_fin ?? "").toString().trim() || null,
+      estado:          (t.estado ?? "trabaja").toString().toLowerCase() === "libre" ? "libre" : "trabaja",
+      seccion:         (t.seccion ?? "").toString().trim() || null,
+      notas:           null,
+    }));
+
+    res.json({ turnos, raw: rawText });
+  } catch (err) {
+    logger.error({ err }, "Error procesando imagen con Hugging Face");
+    const msg = err instanceof Error ? err.message : "Error desconocido";
+    res.status(500).json({ error: `Error al procesar la imagen: ${msg}` });
+  }
 });
 
 /* ── GET /api/horarios/versiones ── */

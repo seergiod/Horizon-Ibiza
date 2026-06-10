@@ -195,6 +195,17 @@ export async function getMisHorarios() {
   return handle<{ version: HorarioVersion | null; turnos: Turno[] }>(res);
 }
 
+export async function procesarImagenHorario(file: File) {
+  const form = new FormData();
+  form.append("imagen", file);
+  const res = await fetch(`${BASE}/horarios/procesar-imagen`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${getToken() ?? ""}` },
+    body: form,
+  });
+  return handle<{ turnos: TurnoInput[]; raw: string }>(res);
+}
+
 export async function guardarVersionHorario(data: {
   semana_inicio: string;
   nombre?: string;
