@@ -1,27 +1,39 @@
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import { db, usersTable } from "@workspace/db";
+import { eq, or } from "drizzle-orm";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "horizon-dashboard-secret-dev";
 
 export interface AuthPayload {
   username: string;
   role: "admin" | "empleado";
+  userId?: number;
 }
 
-const USERS: Record<string, { password: string; role: "admin" | "empleado" }> = {
-  admin: {
-    password: process.env.DASHBOARD_ADMIN_PASS ?? "admin123",
-    role: "admin",
-  },
-  empleado: {
-    password: process.env.DASHBOARD_EMPLOYEE_PASS ?? "empleado123",
-    role: "empleado",
-  },
-};
+export async function authenticate(identifier: string, password: string): Promise<AuthPayload | null> {
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(
+      or(
+        eq(usersTable.username, identifier),
+        eq(usersTable.email, identifier),
+        eq(usersTable.dni, identifier),
+      ),
+    )
+    .limit(1);
 
-export function authenticate(username: string, password: string): AuthPayload | null {
-  const user = USERS[username];
-  if (!user || user.password !== password) return null;
-  return { username, role: user.role };
+  if (!user || user.estado !== "activo") return null;
+
+  const match = await bcrypt.compare(password, user.password_hash);
+  if (!match) return null;
+
+  return {
+    username: user.username,
+    role: user.rol as "admin" | "empleado",
+    userId: user.id,
+  };
 }
 
 export function signToken(payload: AuthPayload): string {
@@ -34,4 +46,8 @@ export function verifyToken(token: string): AuthPayload | null {
   } catch {
     return null;
   }
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
 }

@@ -23,7 +23,7 @@ function AppShell() {
     return (
       <Suspense fallback={null}>
         <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/*" element={<Dashboard />} />
         </Routes>
       </Suspense>
     );

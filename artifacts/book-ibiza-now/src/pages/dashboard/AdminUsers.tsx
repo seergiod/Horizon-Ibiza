@@ -1,0 +1,156 @@
+import { useState, useEffect } from "react";
+import { listUsers, createUser, updateUser, deleteUser, type DashUser } from "@/lib/dashboard-api";
+
+const ROL_COLORS = {
+  admin:    "bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30",
+  empleado: "bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/30",
+};
+const ESTADO_COLORS = {
+  activo:   "bg-emerald-500/20 text-emerald-300",
+  inactivo: "bg-slate-500/20 text-slate-400",
+};
+
+const EMPTY = { nombre: "", apellidos: "", dni: "", email: "", username: "", telefono: "", password: "", rol: "empleado" as "admin" | "empleado", estado: "activo" as "activo" | "inactivo" };
+
+function UserModal({ user, onClose, onSaved }: {
+  user: Partial<DashUser & { password: string }> | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const isEdit = !!user?.id;
+  const [form, setForm] = useState({ ...EMPTY, ...(user ?? {}) });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+  const inp = "rounded-lg px-3 py-2 text-sm text-white outline-none w-full";
+  const sty = { background: "#162040", border: "1px solid rgba(255,255,255,0.1)" };
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true); setError("");
+    try {
+      if (isEdit) {
+        const patch: Record<string, unknown> = { nombre: form.nombre, apellidos: form.apellidos, dni: form.dni || undefined, email: form.email, username: form.username, telefono: form.telefono || undefined, rol: form.rol, estado: form.estado };
+        if (form.password) patch.password = form.password;
+        await updateUser(user!.id!, patch as Parameters<typeof updateUser>[1]);
+      } else {
+        if (!form.password) { setError("Contraseña requerida"); setLoading(false); return; }
+        await createUser(form);
+      }
+      onSaved();
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error");
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ background: "rgba(0,0,0,0.7)" }}>
+      <div className="w-full max-w-lg rounded-2xl p-6 flex flex-col gap-4 my-4" style={{ background: "#0f1d35", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="flex items-center justify-between">
+          <div className="text-white font-bold text-lg">{isEdit ? "Editar usuario" : "Nuevo usuario"}</div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl">✕</button>
+        </div>
+        {error && <div className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">{error}</div>}
+        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Nombre *</label><input required className={inp} style={sty} value={form.nombre} onChange={e => set("nombre", e.target.value)} /></div>
+          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Apellidos</label><input className={inp} style={sty} value={form.apellidos} onChange={e => set("apellidos", e.target.value)} /></div>
+          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">DNI</label><input className={inp} style={sty} value={form.dni} onChange={e => set("dni", e.target.value)} placeholder="12345678A" /></div>
+          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Teléfono</label><input className={inp} style={sty} value={form.telefono} onChange={e => set("telefono", e.target.value)} /></div>
+          <div className="col-span-2 flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Email *</label><input required type="email" className={inp} style={sty} value={form.email} onChange={e => set("email", e.target.value)} /></div>
+          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Usuario *</label><input required className={inp} style={sty} value={form.username} onChange={e => set("username", e.target.value)} /></div>
+          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Contraseña {isEdit ? "(dejar vacío)" : "*"}</label><input type="password" className={inp} style={sty} value={(form as typeof EMPTY).password} onChange={e => set("password", e.target.value)} placeholder={isEdit ? "Sin cambios" : "Mínimo 6 caracteres"} /></div>
+          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Rol</label><select className={inp} style={sty} value={form.rol} onChange={e => set("rol", e.target.value)}><option value="empleado">Empleado</option><option value="admin">Admin</option></select></div>
+          <div className="flex flex-col gap-1"><label className="text-xs text-slate-400 font-semibold uppercase tracking-widest">Estado</label><select className={inp} style={sty} value={form.estado} onChange={e => set("estado", e.target.value)}><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select></div>
+          <div className="col-span-2">
+            <button type="submit" disabled={loading} className="w-full rounded-xl py-3 text-sm font-bold text-white disabled:opacity-40" style={{ background: "linear-gradient(135deg,#06b6d4,#2563eb)" }}>{loading ? "Guardando…" : (isEdit ? "Actualizar" : "Crear usuario")}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export function AdminUsers() {
+  const [users, setUsers] = useState<DashUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [editUser, setEditUser] = useState<Partial<DashUser & { password: string }> | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const load = async () => { setLoading(true); try { setUsers(await listUsers()); } catch { } finally { setLoading(false); }; };
+  useEffect(() => { load(); }, []);
+
+  async function handleDelete(u: DashUser) {
+    if (!confirm(`¿Eliminar al usuario ${u.nombre} ${u.apellidos}? Esta acción no se puede deshacer.`)) return;
+    await deleteUser(u.id);
+    setUsers(p => p.filter(x => x.id !== u.id));
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-white">Gestión de usuarios</h2>
+          <p className="text-xs text-slate-400 mt-1">{users.length} usuario{users.length !== 1 ? "s" : ""} registrados</p>
+        </div>
+        <button onClick={() => { setEditUser(null); setShowModal(true); }} className="rounded-xl px-4 py-2.5 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#06b6d4,#2563eb)" }}>+ Nuevo usuario</button>
+      </div>
+
+      <div className="rounded-2xl overflow-hidden" style={{ background: "#0f1d35", border: "1px solid rgba(255,255,255,0.06)" }}>
+        {loading ? (
+          <div className="flex items-center justify-center py-20 text-slate-400 animate-pulse">Cargando usuarios…</div>
+        ) : users.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-2 text-slate-500"><div className="text-4xl opacity-30">👥</div><div className="text-sm">No hay usuarios</div></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  {["Nombre", "Email / Usuario", "DNI", "Teléfono", "Rol", "Estado", "Alta", ""].map(h => (
+                    <th key={h} className="text-left text-xs font-semibold uppercase tracking-widest text-slate-500 px-4 py-3 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id} className="hover:bg-white/[0.02]" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td className="px-4 py-3 font-medium text-white whitespace-nowrap">{u.nombre} {u.apellidos}</td>
+                    <td className="px-4 py-3">
+                      <div className="text-slate-300">{u.email}</div>
+                      <div className="text-xs text-slate-500">@{u.username}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">{u.dni ?? <span className="text-slate-600">—</span>}</td>
+                    <td className="px-4 py-3 text-slate-400">{u.telefono ?? <span className="text-slate-600">—</span>}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-semibold rounded-full px-2.5 py-1 capitalize ${ROL_COLORS[u.rol]}`}>{u.rol}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-semibold rounded-full px-2.5 py-1 capitalize ${ESTADO_COLORS[u.estado]}`}>{u.estado}</span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
+                      {new Date(u.fecha_creacion).toLocaleDateString("es-ES")}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => { setEditUser(u); setShowModal(true); }} className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-medium">Editar</button>
+                        <button onClick={() => handleDelete(u)} className="text-xs text-slate-600 hover:text-red-400 transition-colors font-medium">Eliminar</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {showModal && (
+        <UserModal
+          user={editUser}
+          onClose={() => { setShowModal(false); setEditUser(null); }}
+          onSaved={load}
+        />
+      )}
+    </div>
+  );
+}

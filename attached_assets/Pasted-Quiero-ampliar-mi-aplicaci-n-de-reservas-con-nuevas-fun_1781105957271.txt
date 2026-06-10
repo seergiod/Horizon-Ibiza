@@ -1,0 +1,183 @@
+Quiero ampliar mi aplicación de reservas con nuevas funcionalidades avanzadas en el dashboard.
+
+CONTEXTO
+Ya existe:
+- Sistema de reservas desde WhatsApp
+- Backend con API REST
+- Dashboard para empleados con lista de reservas
+- Sistema de login con roles (admin / empleado)
+
+AHORA QUIERO AÑADIR:
+
+================================================
+1. CALENDARIO DE RESERVAS (OBLIGATORIO)
+================================================
+
+Añadir una vista tipo calendario mensual en el dashboard.
+
+FUNCIONALIDAD:
+
+- Mostrar todas las reservas agrupadas por día
+- Cada día debe mostrar:
+  - Número total de reservas
+  - Indicador visual de ocupación (bajo / medio / alto)
+  - Colores según carga del día
+
+- Al hacer clic en un día:
+  - Mostrar lista de reservas de ese día
+  - Permitir ver detalles completos
+
+- Navegación:
+  - Mes anterior / siguiente
+  - Vista mensual (principal)
+
+DISEÑO:
+- Estilo moderno tipo SaaS
+- Colores:
+  - Verde: baja ocupación
+  - Amarillo: media
+  - Rojo: alta ocupación
+- Responsive móvil
+
+================================================
+2. PANEL DE ADMINISTRADOR (MUY IMPORTANTE)
+================================================
+
+Crear un panel exclusivo para usuarios con rol "admin".
+
+FUNCIONES DEL ADMIN:
+
+A) Gestión de usuarios manual
+- Crear usuarios
+- Editar usuarios
+- Eliminar usuarios
+- Asignar roles:
+  - admin
+  - empleado
+
+Campos de usuario:
+- nombre
+- apellidos
+- dni
+- email
+- teléfono
+- contraseña (hasheada)
+- rol
+- fecha_creación
+- estado (activo/inactivo)
+
+================================================
+B) IMPORTACIÓN MASIVA (CSV / EXCEL)
+================================================
+
+El admin debe poder subir un archivo CSV o Excel.
+
+El sistema debe:
+
+- Leer archivo automáticamente
+- Validar datos
+- Detectar errores (emails inválidos, campos vacíos)
+- Evitar duplicados por email o DNI
+- Insertar usuarios en base de datos
+
+EJEMPLO DE COLUMNAS:
+
+nombre, apellidos, dni, email, telefono, rol
+
+ROL:
+- Si no viene, por defecto "empleado"
+
+================================================
+3. SEGURIDAD
+================================================
+
+- Solo admin puede:
+  - Crear usuarios
+  - Importar CSV/Excel
+  - Eliminar usuarios
+
+- Empleados NO pueden acceder a:
+  - Panel de administración
+  - Gestión de usuarios
+
+================================================
+4. BACKEND (OBLIGATORIO)
+================================================
+
+Crear endpoints:
+
+USUARIOS:
+- POST /api/users (crear usuario)
+- GET /api/users
+- GET /api/users/:id
+- PUT /api/users/:id
+- DELETE /api/users/:id
+
+IMPORTACIÓN:
+- POST /api/users/import (CSV/Excel upload)
+
+RESERVAS CALENDARIO:
+- GET /api/reservas/calendar?month=MM&year=YYYY
+
+================================================
+5. FRONTEND
+================================================
+
+Añadir rutas:
+
+/dashboard/calendar
+/dashboard/admin
+/dashboard/admin/users
+/dashboard/admin/import
+
+UI:
+
+- Sidebar actualizado con acceso a:
+  - Reservas
+  - Calendario
+  - Admin (solo admin visible)
+
+- Diseño moderno tipo SaaS:
+  - cards
+  - glassmorphism suave opcional
+  - animaciones ligeras
+  - loading states
+
+================================================
+6. LÓGICA CALENDARIO
+================================================
+
+- Agrupar reservas por fecha
+- Calcular ocupación diaria:
+  - baja: 1–3 reservas
+  - media: 4–7
+  - alta: 8+
+
+- Renderizar grid mensual
+
+================================================
+7. TECNOLOGÍA
+================================================
+
+- Código limpio y modular
+- Separar:
+  - controllers
+  - services
+  - routes
+  - utils
+  - models
+
+- Preparar para escalar
+
+================================================
+OBJETIVO FINAL
+================================================
+
+Un sistema completo de:
+- Reservas automáticas (WhatsApp)
+- Dashboard empleado
+- Calendario visual de ocupación
+- Panel de administración con gestión de usuarios
+- Importación masiva CSV/Excel
+
+Implementar todo manteniendo el código existente sin romper funcionalidades actuales.

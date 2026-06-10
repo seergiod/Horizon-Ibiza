@@ -1,24 +1,25 @@
 ---
 name: Dashboard authentication
-description: How employee dashboard auth works — no user table, env-var passwords.
+description: How employee dashboard auth works — DB-backed bcrypt users, seeded on startup.
 ---
 
 # Dashboard Auth
 
 ## Approach
-No users table. Two hardcoded roles:
-- `admin` — password from `DASHBOARD_ADMIN_PASS` env var, default `admin123`
-- `empleado` — password from `DASHBOARD_EMPLOYEE_PASS` env var, default `empleado123`
+`usersTable` in PostgreSQL. `authenticate()` is async — checks DB by username, email, OR dni.
+**The login route MUST `await authenticate()`** — it's async. Forgetting `await` returns a Promise truthy value, causing false-positive auth.
 
-**Why:** Simple restaurant use-case with 2 known users. DB user management adds complexity with no benefit here.
+**Why:** Migrated from hardcoded users to DB-backed users to support user management panel.
 
-**How to apply:** To change credentials in production, set `DASHBOARD_ADMIN_PASS` and `DASHBOARD_EMPLOYEE_PASS` secrets. The defaults are only for dev and shown in the login hint.
+## Seed
+`seedDefaultUsers()` runs at startup in `index.ts`. Creates admin/empleado if none exist.
+- admin: username=admin, email=admin@horizon.com, pass=DASHBOARD_ADMIN_PASS (default: admin123)
+- empleado: username=empleado, email=empleado@horizon.com, pass=DASHBOARD_EMPLOYEE_PASS (default: empleado123)
 
 ## JWT
 - Secret: `JWT_SECRET` env var, default `horizon-dashboard-secret-dev`
-- Expiry: 12h
-- Stored: `localStorage` key `hz_token`
-- Header: `Authorization: Bearer <token>`
+- Expiry: 12h — stored in `localStorage` key `hz_token`
+- Payload: `{ username, role, userId }`
 
-## Production hardening needed
-Set all three env vars as Replit secrets before deploying.
+## Production hardening
+Set `DASHBOARD_ADMIN_PASS`, `DASHBOARD_EMPLOYEE_PASS`, `JWT_SECRET` as Replit secrets.
