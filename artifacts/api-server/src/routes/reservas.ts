@@ -9,6 +9,33 @@ import { logger } from "../lib/logger.js";
 import { sanitizeQuery } from "../lib/pii.js";
 
 const router = Router();
+
+/* ── POST /api/reservas/public  (sin auth — formulario web de clientes) ── */
+router.post(
+  "/reservas/public",
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 5, message: "Demasiadas solicitudes. Intenta de nuevo en 15 minutos." }),
+  async (req, res) => {
+    try {
+      const body = {
+        ...req.body,
+        fuente: "web",
+        estado: "pendiente",
+      };
+      const parsed = insertReservaSchema.safeParse(body);
+      if (!parsed.success) {
+        respondError(res, Errors.INVALID_DATA(parsed.error.issues));
+        return;
+      }
+      const [created] = await db.insert(reservasTable).values(parsed.data).returning();
+      broadcast("reserva_nueva", created);
+      res.status(201).json({ ok: true, id: created.id });
+    } catch (err) {
+      logger.error({ err }, "Error creando reserva pública");
+      respondError(res, Errors.DB_ERROR("reserva", "crear"));
+    }
+  },
+);
+
 router.use(requireAuth);
 
 /* ── GET /api/reservas/calendar?month=MM&year=YYYY ── */

@@ -282,7 +282,11 @@ export function ReservasList({ wsRef }: { wsRef?: React.RefObject<WebSocket | nu
                           {Object.entries(ESTADO_LABELS).map(([k, v]) => <option key={k} value={k} style={{ background: "#0f1d35", color: "#e2e8f0" }}>{v}</option>)}
                         </select>
                       </td>
-                      <td className="px-4 py-3"><span className="text-[11px] text-slate-500 capitalize">{r.fuente ?? "manual"}</span></td>
+                      <td className="px-4 py-3">
+                        {r.fuente === "web"
+                          ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(99,102,241,0.18)", color: "#a5b4fc" }}>🌐 WEB</span>
+                          : <span className="text-[11px] text-slate-600">manual</span>}
+                      </td>
                       <td className="px-4 py-3"><button onClick={() => { if (confirm(`¿Eliminar reserva de ${r.cliente}?`)) deleteReserva(r.id).then(() => setReservas(p => p.filter(x => x.id !== r.id))); }} className="text-slate-600 hover:text-red-400 text-base leading-none">✕</button></td>
                     </tr>
                   ))}
