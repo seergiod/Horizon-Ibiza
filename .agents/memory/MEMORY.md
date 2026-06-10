@@ -1,3 +1,4 @@
 - [Reservation system architecture](reservation-system.md) — Express API + Drizzle + WS on port 8080; frontend at port 21110; both reachable from browser via Replit proxy at same host.
 - [Dashboard auth](dashboard-auth.md) — DB-backed users (bcrypt), seed on startup, JWT 12h tokens, login by username/email/DNI.
 - [Dashboard routing](dashboard-routing.md) — /dashboard/* all handled by Dashboard component with internal React Router sub-routes and sidebar.
+- [Horarios system](horarios-system.md) — OCR schedule upload (Tesseract.js, free, browser-side) + DB tables horario_versiones+turnos + Twilio SMS optional.

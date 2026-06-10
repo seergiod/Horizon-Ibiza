@@ -146,6 +146,69 @@ export async function deleteUser(id: number) {
   return handle<{ ok: boolean }>(res);
 }
 
+/* ── Horarios ── */
+export interface HorarioVersion {
+  id: number;
+  semana_inicio: string;
+  nombre: string | null;
+  notas: string | null;
+  fecha_creacion: string;
+}
+
+export interface Turno {
+  id: number;
+  version_id: number;
+  empleado_nombre: string;
+  user_id: number | null;
+  dia: string;
+  seccion: string | null;
+  hora_inicio: string | null;
+  hora_fin: string | null;
+  estado: "trabaja" | "libre" | "modificado";
+  turno_tipo: string | null;
+  notas: string | null;
+  es_cambio: boolean | null;
+}
+
+export interface TurnoInput {
+  empleado_nombre: string;
+  dia: string;
+  hora_inicio: string | null;
+  hora_fin: string | null;
+  estado: "trabaja" | "libre" | "modificado";
+  seccion: string | null;
+  notas: string | null;
+}
+
+export async function getVersionesHorario() {
+  const res = await fetch(`${BASE}/horarios/versiones`, { headers: headers() });
+  return handle<HorarioVersion[]>(res);
+}
+
+export async function getVersionHorario(id: number) {
+  const res = await fetch(`${BASE}/horarios/versiones/${id}`, { headers: headers() });
+  return handle<HorarioVersion & { turnos: Turno[] }>(res);
+}
+
+export async function getMisHorarios() {
+  const res = await fetch(`${BASE}/horarios/mios`, { headers: headers() });
+  return handle<{ version: HorarioVersion | null; turnos: Turno[] }>(res);
+}
+
+export async function guardarVersionHorario(data: {
+  semana_inicio: string;
+  nombre?: string;
+  notas?: string;
+  turnos: TurnoInput[];
+}) {
+  const res = await fetch(`${BASE}/horarios/versiones`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(data),
+  });
+  return handle<HorarioVersion & { cambios: string[] }>(res);
+}
+
 export async function importUsers(file: File, dryRun = false) {
   const form = new FormData();
   form.append("file", file);

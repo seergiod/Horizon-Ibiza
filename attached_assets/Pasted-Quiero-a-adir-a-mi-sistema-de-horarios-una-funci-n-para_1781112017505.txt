@@ -1,0 +1,157 @@
+Quiero añadir a mi sistema de horarios una función para que el admin pueda subir imágenes como la que te adjunto y el sistema las convierta automáticamente en horarios digitales.
+
+OBJETIVO
+El admin sube una imagen de horario (tabla tipo cuadrícula como la del ejemplo) y el sistema:
+
+- La lee
+- La interpreta
+- La convierte en datos estructurados
+- La muestra en la app como horario interactivo
+- Y lo asigna a los empleados correspondientes
+
+================================================
+1. INPUT (IMAGEN DE HORARIO)
+================================================
+
+El admin puede subir imágenes como:
+
+- Tablas con días (lunes, martes…)
+- Columnas con empleados
+- Turnos (mañana/tarde)
+- Textos como LIBRE, X, horarios tipo 08:00-16:00
+
+================================================
+2. OCR + INTERPRETACIÓN INTELIGENTE
+================================================
+
+Implementar sistema de lectura de imagen:
+
+- Usar OCR (Tesseract o servicio similar)
+- Detectar estructura de tabla
+- Identificar:
+  - nombres de empleados
+  - días de la semana
+  - turnos
+  - zonas (si existen)
+  - horarios
+  - estados (LIBRE, trabajo, etc.)
+
+Luego convertirlo a JSON estructurado:
+
+{
+  empleado: "JORDI",
+  dia: "lunes",
+  turno: "mañana",
+  horario: "08:00-16:00",
+  estado: "trabaja"
+}
+
+================================================
+3. GENERACIÓN DE HORARIO DIGITAL
+================================================
+
+Una vez procesado:
+
+- Guardar en base de datos
+- Mostrar en:
+  /dashboard/schedules
+  /dashboard/calendar
+
+Debe verse como:
+
+- Tabla editable
+- Vista semanal/mensual
+- Colores por estado:
+  - verde = trabaja
+  - gris = libre
+  - rojo = modificado
+
+================================================
+4. ASIGNACIÓN AUTOMÁTICA A EMPLEADOS
+================================================
+
+Cada empleado solo ve su parte del horario:
+
+- Filtrar por nombre
+- Mostrar solo su columna/turnos
+- Vista simple tipo “Mi horario”
+
+================================================
+5. DETECCIÓN DE CAMBIOS
+================================================
+
+Si el admin sube otra imagen:
+
+- Comparar con la anterior
+- Detectar cambios:
+  - cambio de turno
+  - LIBRE → trabajo
+  - cambio de hora
+
+Acciones:
+
+- Marcar cambios en rojo en el sistema
+- Crear nueva versión del horario
+- Guardar historial
+
+================================================
+6. NOTIFICACIONES SMS
+================================================
+
+Si hay cambios en el horario:
+
+- Enviar SMS automático al empleado afectado
+- Mensaje:
+  "Tu horario ha sido modificado. Revisa la app."
+
+Usar Twilio o sistema equivalente.
+No bloquear la app si falla el SMS.
+
+================================================
+7. BACKEND
+================================================
+
+Crear endpoints:
+
+POST /api/schedules/upload-image
+POST /api/schedules/process-image
+GET /api/schedules/parsed
+GET /api/schedules/user/:id
+POST /api/schedules/compare-versions
+
+================================================
+8. FRONTEND
+================================================
+
+Nuevo panel admin:
+
+- Subir imagen de horario
+- Vista previa de imagen
+- Botón "procesar horario"
+
+Dashboard empleado:
+
+- Mi horario limpio
+- Vista tipo calendario o tabla simple
+- Indicador de cambios en rojo
+
+================================================
+9. REGLAS IMPORTANTES
+================================================
+
+- No romper sistema actual
+- Mantener compatibilidad con horarios manuales
+- El sistema debe ser modular (OCR separado del backend)
+- Debe poder mejorarse en el futuro (IA más avanzada)
+
+================================================
+OBJETIVO FINAL
+================================================
+
+Que el admin solo tenga que hacer esto:
+
+1. Hacer foto del horario
+2. Subirla
+3. El sistema lo convierte todo automáticamente
+4. Cada empleado ve su horario claro
+5. Si cambia algo → notificación SMS + resaltado en rojo

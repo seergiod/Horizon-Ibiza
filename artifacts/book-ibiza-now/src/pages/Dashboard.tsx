@@ -5,6 +5,8 @@ import { ReservasList } from "./dashboard/ReservasList";
 import { CalendarView } from "./dashboard/CalendarView";
 import { AdminUsers } from "./dashboard/AdminUsers";
 import { AdminImport } from "./dashboard/AdminImport";
+import { HorarioUpload } from "./dashboard/HorarioUpload";
+import { HorarioView } from "./dashboard/HorarioView";
 
 /* ── Login Screen ── */
 function LoginScreen({ onLogin }: { onLogin: (token: string, role: string) => void }) {
@@ -53,58 +55,54 @@ function LoginScreen({ onLogin }: { onLogin: (token: string, role: string) => vo
 }
 
 /* ── Sidebar ── */
-const NAV_ITEMS = [
-  { path: "/dashboard/reservas",      icon: "📋", label: "Reservas",  adminOnly: false },
-  { path: "/dashboard/calendar",      icon: "📅", label: "Calendario", adminOnly: false },
-  { path: "/dashboard/admin/users",   icon: "👥", label: "Usuarios",  adminOnly: true },
-  { path: "/dashboard/admin/import",  icon: "📥", label: "Importar",  adminOnly: true },
+const NAV_ITEMS_MAIN = [
+  { path: "/dashboard/reservas", icon: "📋", label: "Reservas" },
+  { path: "/dashboard/calendar", icon: "📅", label: "Calendario" },
+  { path: "/dashboard/horarios", icon: "🗓️", label: "Mi Horario" },
+];
+
+const NAV_ITEMS_ADMIN = [
+  { path: "/dashboard/admin/horarios", icon: "📤", label: "Subir Horario" },
+  { path: "/dashboard/admin/users",    icon: "👥", label: "Usuarios" },
+  { path: "/dashboard/admin/import",   icon: "📥", label: "Importar" },
 ];
 
 function Sidebar({ role, onLogout, mobileOpen, onClose }: {
   role: string; onLogout: () => void; mobileOpen: boolean; onClose: () => void;
 }) {
-  const items = NAV_ITEMS.filter(n => !n.adminOnly || role === "admin");
   return (
     <>
-      {/* Mobile overlay */}
       {mobileOpen && <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={onClose} />}
 
       <aside className={`fixed top-0 left-0 h-full z-40 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:relative lg:z-auto ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         style={{ width: 220, background: "#080f1e", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
-        {/* Brand */}
         <div className="px-5 py-5 flex items-center gap-2">
           <div className="text-base font-bold text-white tracking-tight">Horizon <span style={{ color: "#06b6d4" }}>Dashboard</span></div>
         </div>
 
-        {/* Role badge */}
         <div className="px-5 mb-4">
           <div className="text-xs font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1.5" style={{ background: role === "admin" ? "rgba(139,92,246,0.2)" : "rgba(59,130,246,0.2)", color: role === "admin" ? "#c4b5fd" : "#93c5fd" }}>
             {role === "admin" ? "👑" : "👤"} {role === "admin" ? "Administrador" : "Empleado"}
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 flex flex-col gap-1">
-          {role === "admin" && (
-            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-600 px-3 mb-1 mt-1">Principal</div>
-          )}
-          {items.slice(0, 2).map(item => (
+        <nav className="flex-1 px-3 flex flex-col gap-1 overflow-y-auto">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-600 px-3 mb-1 mt-1">Principal</div>
+          {NAV_ITEMS_MAIN.map(item => (
             <NavLink key={item.path} to={item.path} onClick={onClose}
               className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? "text-white" : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"}`}
-              style={({ isActive }) => isActive ? { background: "rgba(6,182,212,0.15)", color: "#22d3ee" } : undefined}
-            >
+              style={({ isActive }) => isActive ? { background: "rgba(6,182,212,0.15)", color: "#22d3ee" } : undefined}>
               <span>{item.icon}</span> {item.label}
             </NavLink>
           ))}
 
-          {role === "admin" && items.length > 2 && (
+          {role === "admin" && (
             <>
               <div className="text-[10px] font-bold uppercase tracking-widest text-slate-600 px-3 mb-1 mt-3">Administración</div>
-              {items.slice(2).map(item => (
+              {NAV_ITEMS_ADMIN.map(item => (
                 <NavLink key={item.path} to={item.path} onClick={onClose}
                   className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? "text-white" : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"}`}
-                  style={({ isActive }) => isActive ? { background: "rgba(139,92,246,0.15)", color: "#c4b5fd" } : undefined}
-                >
+                  style={({ isActive }) => isActive ? { background: "rgba(139,92,246,0.15)", color: "#c4b5fd" } : undefined}>
                   <span>{item.icon}</span> {item.label}
                 </NavLink>
               ))}
@@ -112,7 +110,6 @@ function Sidebar({ role, onLogout, mobileOpen, onClose }: {
           )}
         </nav>
 
-        {/* Logout */}
         <div className="p-4 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
           <button onClick={onLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all">
             <span>🚪</span> Cerrar sesión
@@ -129,10 +126,12 @@ function DashboardLayout({ role, onLogout, wsStatus }: { role: string; onLogout:
   const { pathname } = useLocation();
 
   const pageTitle: Record<string, string> = {
-    "/dashboard/reservas":     "Reservas",
-    "/dashboard/calendar":     "Calendario",
-    "/dashboard/admin/users":  "Gestión de usuarios",
-    "/dashboard/admin/import": "Importar usuarios",
+    "/dashboard/reservas":        "Reservas",
+    "/dashboard/calendar":        "Calendario",
+    "/dashboard/horarios":        "Mi Horario",
+    "/dashboard/admin/horarios":  "Subir Horario",
+    "/dashboard/admin/users":     "Gestión de usuarios",
+    "/dashboard/admin/import":    "Importar usuarios",
   };
 
   return (
@@ -140,7 +139,6 @@ function DashboardLayout({ role, onLogout, wsStatus }: { role: string; onLogout:
       <Sidebar role={role} onLogout={onLogout} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
         <header className="sticky top-0 z-20 flex items-center justify-between px-5 py-3 gap-3"
           style={{ background: "rgba(8,15,30,0.95)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(12px)" }}>
           <div className="flex items-center gap-3">
@@ -152,14 +150,15 @@ function DashboardLayout({ role, onLogout, wsStatus }: { role: string; onLogout:
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
           <Routes>
-            <Route path="reservas" element={<ReservasList />} />
-            <Route path="calendar" element={<CalendarView />} />
+            <Route path="reservas"       element={<ReservasList />} />
+            <Route path="calendar"       element={<CalendarView />} />
+            <Route path="horarios"       element={<HorarioView role={role} />} />
             {role === "admin" && <>
-              <Route path="admin/users"  element={<AdminUsers />} />
-              <Route path="admin/import" element={<AdminImport />} />
+              <Route path="admin/horarios" element={<HorarioUpload />} />
+              <Route path="admin/users"    element={<AdminUsers />} />
+              <Route path="admin/import"   element={<AdminImport />} />
             </>}
             <Route path="*" element={<Navigate to="/dashboard/reservas" replace />} />
           </Routes>
