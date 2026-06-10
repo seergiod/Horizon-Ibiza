@@ -6,7 +6,7 @@ import { respondError, Errors } from "../lib/errors.js";
 import multer from "multer";
 import { z } from "zod";
 import { logger } from "../lib/logger.js";
-import { InferenceClient } from "@huggingface/inference";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const router = Router();
 router.use(requireAuth);
@@ -39,48 +39,46 @@ router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), 
     return;
   }
 
-  const apiKey = process.env.HUGGINGFACE_API_KEY;
+  const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: "HUGGINGFACE_API_KEY no configurada" });
+    res.status(500).json({ error: "GOOGLE_API_KEY no configurada" });
     return;
   }
 
   try {
     const base64 = req.file.buffer.toString("base64");
-    const mimeType = req.file.mimetype || "image/jpeg";
-    const dataUrl = `data:${mimeType};base64,${base64}`;
+    const mimeType = (req.file.mimetype || "image/jpeg") as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
 
-    const client = new InferenceClient(apiKey);
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const PROMPT = `Analiza esta imagen de un cuadrante de horarios de hostelería. Extrae los turnos de cada empleado y devuélveme ÚNICAMENTE un array JSON válido, sin bloques de código markdown, sin texto extra, solo el JSON limpio con este formato:
+    const PROMPT = `Analiza esta imagen de un cuadrante de horarios de hostelería. Extrae los turnos de cada empleado y devuélveme ÚNICAMENTE un array JSON válido, sin bloques de código markdown, sin texto extra, solo el JSON limpio con este formato exacto:
 [
   {
     "empleado": "Nombre",
-    "dia": "lunes/martes/miércoles/jueves/viernes/sábado/domingo",
-    "inicio": "HH:MM",
-    "fin": "HH:MM",
-    "estado": "trabaja/libre",
-    "seccion": "Nombre de la sección/zona"
+    "dia": "lunes",
+    "inicio": "08:00",
+    "fin": "16:00",
+    "estado": "trabaja",
+    "seccion": "sala"
   }
 ]
-Cruza con cuidado la fila del día con la columna del empleado. Si la celda dice 'LIBRE', pon el estado como 'libre' y deja las horas vacías (""). Si la celda tiene un horario tipo 08:00-16:00 o 08:00/16:00, pon estado como 'trabaja'. Solo incluye filas donde hay información real.`;
+Reglas:
+- "dia" debe ser uno de: lunes, martes, miércoles, jueves, viernes, sábado, domingo
+- "estado" debe ser "trabaja" o "libre"
+- Si la celda dice LIBRE o L, pon estado "libre" y deja inicio/fin como ""
+- Si hay horario tipo 08:00-16:00 o 08:00/16:00, pon estado "trabaja"
+- Cruza cuidadosamente cada fila (día) con cada columna (empleado)
+- Solo incluye filas con información real, no filas vacías
+- Devuelve SOLO el JSON, sin ningún texto adicional`;
 
-    const chatResponse = await client.chatCompletion({
-      model: "Qwen/Qwen2-VL-7B-Instruct",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "image_url", image_url: { url: dataUrl } },
-            { type: "text", text: PROMPT },
-          ],
-        },
-      ],
-      max_tokens: 4096,
-    });
+    const result = await model.generateContent([
+      { inlineData: { mimeType, data: base64 } },
+      { text: PROMPT },
+    ]);
 
-    const rawText = chatResponse.choices?.[0]?.message?.content ?? "";
-    logger.info({ rawLength: rawText.length }, "Respuesta recibida de Hugging Face");
+    const rawText = result.response.text() ?? "";
+    logger.info({ rawLength: rawText.length }, "Respuesta recibida de Gemini");
 
     // Extraer JSON limpio (por si el modelo añade algo extra)
     const jsonMatch = rawText.match(/\[[\s\S]*\]/);
@@ -92,7 +90,6 @@ Cruza con cuidado la fila del día con la columna del empleado. Si la celda dice
 
     const parsed = JSON.parse(jsonMatch[0]);
 
-    // Normalizar al formato que espera el frontend
     const turnos = (parsed as Array<Record<string, string>>).map(t => ({
       empleado_nombre: (t.empleado ?? t.empleado_nombre ?? "").toString().trim(),
       dia:             (t.dia ?? "").toString().toLowerCase().trim(),
@@ -105,7 +102,7 @@ Cruza con cuidado la fila del día con la columna del empleado. Si la celda dice
 
     res.json({ turnos, raw: rawText });
   } catch (err) {
-    logger.error({ err }, "Error procesando imagen con Hugging Face");
+    logger.error({ err }, "Error procesando imagen con Gemini");
     const msg = err instanceof Error ? err.message : "Error desconocido";
     res.status(500).json({ error: `Error al procesar la imagen: ${msg}` });
   }
