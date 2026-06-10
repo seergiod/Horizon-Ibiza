@@ -90,17 +90,19 @@ async function processImageJob(jobId: string, rawBuffer: Buffer, apiKey: string)
 
   const base64 = processedBuffer.toString("base64");
 
-  const PROMPT = `Analiza este cuadrante de horarios de hostelería. Devuelve ÚNICAMENTE un array JSON válido sin bloques markdown (\`\`\`json).
-REGLAS CRÍTICAS:
-- NOMBRES DUPLICADOS (CRÍTICO): Para evitar sobrescrituras en la base de datos, en el campo 'empleado' DEBES generar siempre un nombre compuesto uniendo el nombre del empleado y su sección entre paréntesis. Ejemplo: 'Sergio (sala mañana)' o 'Sergio (piscina)'. Aplica este formato a TODOS los empleados para garantizar strings únicos.
-- Celda con 'X' o cruz: Significa ausencia. Setea estado: 'vacaciones', inicio: '', fin: ''.
-- Celda 'LIBRE': Setea estado: 'libre', inicio: '', fin: ''.
-- Celda con horas (Ej: 09:00 a 17:00): Setea estado: 'trabaja' y extrae las horas de inicio y fin (HH:MM).
-- "dia" debe ser uno de: lunes, martes, miércoles, jueves, viernes, sábado, domingo
-- Cruza cuidadosamente cada fila (día) con cada columna (empleado)
-- Solo incluye filas con información real, no filas vacías
-FORMATO ESTRICTO:
-[{"empleado": "Nombre (Seccion)", "dia": "lunes...", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "nombre seccion"}]`;
+  const PROMPT = `Analiza este cuadrante de horarios de hostelería. Devuelve ÚNICAMENTE un array JSON válido sin bloques markdown.
+
+REGLAS DE PROCESAMIENTO OBLIGATORIAS:
+1. ANÁLISIS POR COLUMNA: Debes procesar CADA COLUMNA de empleados de forma independiente. No asumas que porque un empleado tenga el mismo nombre que otro, sus horarios son iguales.
+2. NOMBRES ÚNICOS: Cada empleado DEBE llevar su sección entre paréntesis: 'Nombre (Sección)'. Ejemplo: 'Sergio (sala tarde)' y 'Sergio (piscina)'.
+3. LECTURA CELDA A CELDA: Para CADA DÍA de la semana, mira físicamente la celda correspondiente a ese empleado en esa columna específica.
+   - Si la celda tiene una 'X': estado 'vacaciones', inicio '', fin ''.
+   - Si dice 'LIBRE': estado 'libre', inicio '', fin ''.
+   - Si tiene horas (ej: 09:00 a 17:00): estado 'trabaja', inicio '09:00', fin '17:00'.
+4. NO GENERALIZAR: Prohibido aplicar el horario de una columna a otra aunque los nombres sean iguales. Si una columna tiene 'X' y la otra tiene horario, respeta estrictamente lo que hay en cada columna.
+
+FORMATO JSON:
+[{"empleado": "Nombre (Seccion)", "dia": "lunes", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "nombre seccion"}]`;
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -354,6 +356,40 @@ router.post("/horarios/versiones", requireAdmin, async (req, res) => {
   } catch (err) {
     logger.error({ err }, "Error guardando versión de horario");
     respondError(res, Errors.DB_ERROR("horario", "guardar"));
+  }
+});
+
+/* ── PATCH /api/horarios/turnos/:id ── admin only ── */
+const patchTurnoSchema = z.object({
+  hora_inicio: z.string().nullable().optional(),
+  hora_fin:    z.string().nullable().optional(),
+  estado:      z.enum(["trabaja", "libre", "modificado", "vacaciones"]).optional(),
+  seccion:     z.string().nullable().optional(),
+  notas:       z.string().nullable().optional(),
+});
+
+router.patch("/horarios/turnos/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) { respondError(res, Errors.INVALID_ID); return; }
+
+    const parsed = patchTurnoSchema.safeParse(req.body);
+    if (!parsed.success) {
+      respondError(res, Errors.INVALID_DATA(parsed.error.flatten()));
+      return;
+    }
+
+    const [updated] = await db
+      .update(turnosTable)
+      .set({ ...parsed.data, es_cambio: true })
+      .where(eq(turnosTable.id, id))
+      .returning();
+
+    if (!updated) { respondError(res, Errors.NOT_FOUND("Turno")); return; }
+    res.json(updated);
+  } catch (err) {
+    logger.error({ err }, "Error actualizando turno");
+    respondError(res, Errors.DB_ERROR("turno", "actualizar"));
   }
 });
 

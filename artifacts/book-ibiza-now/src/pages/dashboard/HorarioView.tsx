@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { getMisHorarios, getVersionesHorario, getVersionHorario, listUsers, type DashUser } from "@/lib/dashboard-api";
+import { useState, useEffect, useRef } from "react";
+import { getMisHorarios, getVersionesHorario, getVersionHorario, listUsers, actualizarTurno, type DashUser } from "@/lib/dashboard-api";
 
 const DIAS_ORDER = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
 
@@ -26,15 +26,15 @@ interface Version {
   fecha_creacion: string;
 }
 
-function TurnoChip({ t }: { t: Turno }) {
-  const colors = {
-    trabaja:    { bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#10b981" },
-    libre:      { bg: "rgba(100,116,139,0.12)", border: "rgba(100,116,139,0.3)", text: "#94a3b8" },
-    modificado: { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.3)",   text: "#f87171" },
-    vacaciones: { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
-  };
-  const c = colors[t.estado] ?? colors.trabaja;
+const ESTADO_COLORS = {
+  trabaja:    { bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.3)",  text: "#10b981" },
+  libre:      { bg: "rgba(100,116,139,0.12)", border: "rgba(100,116,139,0.3)", text: "#94a3b8" },
+  modificado: { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.3)",   text: "#f87171" },
+  vacaciones: { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
+};
 
+function TurnoChip({ t }: { t: Turno }) {
+  const c = ESTADO_COLORS[t.estado] ?? ESTADO_COLORS.trabaja;
   return (
     <div className="rounded-lg px-2.5 py-2 text-xs flex flex-col gap-0.5 relative"
       style={{ background: c.bg, border: `1px solid ${c.border}` }}>
@@ -58,6 +58,159 @@ function TurnoChip({ t }: { t: Turno }) {
         </>
       )}
     </div>
+  );
+}
+
+/* ── Inline edit popover (admin only) ── */
+function EditPopover({ turno, onSave, onClose }: {
+  turno: Turno;
+  onSave: (updated: Turno) => void;
+  onClose: () => void;
+}) {
+  const [estado,     setEstado]     = useState(turno.estado);
+  const [horaIn,    setHoraIn]     = useState(turno.hora_inicio ?? "");
+  const [horaFin,   setHoraFin]    = useState(turno.hora_fin ?? "");
+  const [seccion,   setSeccion]    = useState(turno.seccion ?? "");
+  const [notas,     setNotas]      = useState(turno.notas ?? "");
+  const [saving,    setSaving]     = useState(false);
+  const [error,     setError]      = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [onClose]);
+
+  async function handleSave() {
+    setSaving(true); setError("");
+    try {
+      const updated = await actualizarTurno(turno.id, {
+        estado,
+        hora_inicio: horaIn || null,
+        hora_fin:    horaFin || null,
+        seccion:     seccion || null,
+        notas:       notas || null,
+      });
+      onSave(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al guardar");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputCls = "w-full rounded-lg px-2 py-1.5 text-xs text-white outline-none";
+  const inputStyle = { background: "#0f1d35", border: "1px solid rgba(255,255,255,0.1)" };
+  const labelCls = "text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5";
+
+  return (
+    <div ref={ref} className="absolute z-50 rounded-xl p-3 flex flex-col gap-2.5 shadow-2xl"
+      style={{ background: "#0a1e38", border: "1px solid rgba(6,182,212,0.3)", minWidth: 200, top: "100%", left: 0 }}>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-white">Editar turno</span>
+        <button onClick={onClose} className="text-slate-500 hover:text-white text-base leading-none">×</button>
+      </div>
+
+      <div className="flex flex-col gap-0.5">
+        <span className={labelCls}>Estado</span>
+        <select value={estado} onChange={e => setEstado(e.target.value as Turno["estado"])}
+          className={inputCls} style={inputStyle}>
+          <option value="trabaja"    style={{ background: "#0f1d35" }}>Trabaja</option>
+          <option value="libre"      style={{ background: "#0f1d35" }}>Libre</option>
+          <option value="vacaciones" style={{ background: "#0f1d35" }}>Vacaciones</option>
+          <option value="modificado" style={{ background: "#0f1d35" }}>Modificado</option>
+        </select>
+      </div>
+
+      {(estado === "trabaja" || estado === "modificado") && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-0.5">
+            <span className={labelCls}>Inicio</span>
+            <input type="time" value={horaIn} onChange={e => setHoraIn(e.target.value)}
+              className={inputCls} style={inputStyle} />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className={labelCls}>Fin</span>
+            <input type="time" value={horaFin} onChange={e => setHoraFin(e.target.value)}
+              className={inputCls} style={inputStyle} />
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-0.5">
+        <span className={labelCls}>Sección</span>
+        <input value={seccion} onChange={e => setSeccion(e.target.value)}
+          className={inputCls} style={inputStyle} placeholder="sala mañana…" />
+      </div>
+
+      <div className="flex flex-col gap-0.5">
+        <span className={labelCls}>Notas</span>
+        <input value={notas} onChange={e => setNotas(e.target.value)}
+          className={inputCls} style={inputStyle} placeholder="Opcional…" />
+      </div>
+
+      {error && <p className="text-[10px] text-red-400">{error}</p>}
+
+      <button onClick={handleSave} disabled={saving}
+        className="py-1.5 rounded-lg text-xs font-bold text-white disabled:opacity-50 transition-all"
+        style={{ background: "linear-gradient(135deg,#06b6d4,#2563eb)" }}>
+        {saving ? "Guardando…" : "Guardar cambio"}
+      </button>
+    </div>
+  );
+}
+
+/* ── Celda editable ── */
+function TurnoCell({ turnos, dia, empleado, isAdmin, onUpdate }: {
+  turnos: Turno[];
+  dia: string;
+  empleado: string;
+  isAdmin: boolean;
+  onUpdate: (updated: Turno) => void;
+}) {
+  const [editing, setEditing] = useState<Turno | null>(null);
+
+  const cellTurnos = turnos.filter(
+    t => t.dia.toLowerCase() === dia && t.empleado_nombre === empleado
+  );
+
+  if (cellTurnos.length === 0) {
+    return (
+      <td className="px-2 py-1.5 whitespace-nowrap">
+        <span className="text-slate-700">—</span>
+      </td>
+    );
+  }
+
+  return (
+    <td className="px-2 py-1.5 whitespace-nowrap">
+      <div className="flex flex-col gap-1">
+        {cellTurnos.map(t => (
+          <div key={t.id} className="relative group">
+            <TurnoChip t={t} />
+            {isAdmin && (
+              <button
+                onClick={() => setEditing(editing?.id === t.id ? null : t)}
+                className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-[9px] px-1 py-0.5 rounded font-bold"
+                style={{ background: "rgba(6,182,212,0.25)", color: "#22d3ee" }}
+                title="Editar turno">
+                ✎
+              </button>
+            )}
+            {editing?.id === t.id && (
+              <EditPopover
+                turno={t}
+                onSave={updated => { onUpdate(updated); setEditing(null); }}
+                onClose={() => setEditing(null)}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </td>
   );
 }
 
@@ -215,6 +368,10 @@ function VistaAdmin() {
       .finally(() => setLoadingV(false));
   }, [selId]);
 
+  function handleTurnoUpdate(updated: Turno) {
+    setTurnos(prev => prev.map(t => t.id === updated.id ? updated : t));
+  }
+
   if (loading) return <div className="text-slate-400 text-sm p-8 text-center">Cargando…</div>;
   if (error)   return <div className="text-red-400 text-sm p-4 bg-red-500/10 rounded-xl">{error}</div>;
 
@@ -224,7 +381,10 @@ function VistaAdmin() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-bold text-white">Horarios publicados</h2>
+        <div>
+          <h2 className="text-xl font-bold text-white">Horarios publicados</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Pasa el ratón sobre una celda y pulsa ✎ para editar (solo admins)</p>
+        </div>
         {versiones.length > 0 && (
           <select value={selId ?? ""} onChange={e => setSelId(Number(e.target.value))}
             className="text-sm text-white rounded-xl px-3 py-2 outline-none"
@@ -265,46 +425,40 @@ function VistaAdmin() {
                     <th key={e} className="px-3 py-2 text-left font-bold text-slate-300 whitespace-nowrap">
                       <div className="flex flex-col gap-1">
                         <span>{e}</span>
-                        <WhatsAppBtn
-                          empleado={e}
-                          turnos={turnos}
-                          semana={selVersion.semana_inicio}
-                          users={users}
-                        />
+                        <WhatsAppBtn empleado={e} turnos={turnos} semana={selVersion.semana_inicio} users={users} />
                       </div>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {DIAS_ORDER.map(dia => {
-                  const row = empleados.map(emp => turnos.find(t => t.dia.toLowerCase() === dia && t.empleado_nombre === emp));
-                  return (
-                    <tr key={dia} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                      <td className="px-3 py-2 font-medium text-white capitalize sticky left-0" style={{ background: "#0a1628" }}>{dia}</td>
-                      {row.map((t, i) => (
-                        <td key={i} className="px-2 py-1.5 whitespace-nowrap">
-                          {t ? <TurnoChip t={t} /> : <span className="text-slate-700">—</span>}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
+                {DIAS_ORDER.map(dia => (
+                  <tr key={dia} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td className="px-3 py-2 font-medium text-white capitalize sticky left-0" style={{ background: "#0a1628" }}>{dia}</td>
+                    {empleados.map(emp => (
+                      <TurnoCell
+                        key={emp}
+                        turnos={turnos}
+                        dia={dia}
+                        empleado={emp}
+                        isAdmin={true}
+                        onUpdate={handleTurnoUpdate}
+                      />
+                    ))}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* Leyenda */}
-      {!loadingV && turnos.length > 0 && (
-        <div className="flex gap-4 text-xs text-slate-500 flex-wrap">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500/30 inline-block" />trabaja</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-slate-600/50 inline-block" />libre</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-yellow-500/30 inline-block" />vacaciones</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500/30 inline-block" />modificado</span>
-        </div>
-      )}
+      <div className="flex gap-4 text-xs text-slate-500 flex-wrap">
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500/30 inline-block" />trabaja</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-slate-600/50 inline-block" />libre</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-yellow-500/30 inline-block" />vacaciones</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500/30 inline-block" />modificado</span>
+      </div>
     </div>
   );
 }

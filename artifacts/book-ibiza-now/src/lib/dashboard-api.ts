@@ -255,6 +255,21 @@ export async function guardarVersionHorario(data: {
   return handle<HorarioVersion & { cambios: string[] }>(res);
 }
 
+export async function actualizarTurno(id: number, data: {
+  hora_inicio?: string | null;
+  hora_fin?: string | null;
+  estado?: "trabaja" | "libre" | "modificado" | "vacaciones";
+  seccion?: string | null;
+  notas?: string | null;
+}) {
+  const res = await fetch(`${BASE}/horarios/turnos/${id}`, {
+    method: "PATCH",
+    headers: headers(),
+    body: JSON.stringify(data),
+  });
+  return handle<Turno>(res);
+}
+
 export async function importUsers(file: File, dryRun = false) {
   const form = new FormData();
   form.append("file", file);
