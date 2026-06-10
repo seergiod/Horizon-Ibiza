@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import "@/i18n";
@@ -13,8 +13,22 @@ import { Sunset } from "@/pages/Sunset";
 import { SeaView } from "@/pages/SeaView";
 import { Romantic } from "@/pages/Romantic";
 import { NotFound } from "@/pages/NotFound";
+import { Dashboard } from "@/pages/Dashboard";
 
 function AppShell() {
+  const { pathname } = useLocation();
+  const isDashboard = pathname.startsWith("/dashboard");
+
+  if (isDashboard) {
+    return (
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
   return (
     <>
       <SiteHeader />

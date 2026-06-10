@@ -1,0 +1,142 @@
+Quiero implementar un sistema completo de recepción automática de reservas desde WhatsApp dentro de mi aplicación.
+
+OBJETIVO
+Cada vez que llegue un mensaje de WhatsApp con una reserva, el sistema debe procesarlo automáticamente, extraer los datos y mostrarlos en un panel privado para empleados.
+
+EJEMPLO DE MENSAJE
+
+👤 Cliente Joost Schaling
+📅 Fecha de Reserva 10/06/2026
+⏰ Horario 20:15
+👥 Cantidad de Personas 2 Adulto(s)
+🏢 Zona Elegida Terraza Superior
+🌊 Ubicación (Vista) Vista al mar
+📞 Teléfono +31 639620717
+💬 Comentarios Adicionales Ninguno
+
+ARQUITECTURA
+
+WhatsApp
+↓
+Webhook/Bot
+↓
+Backend
+↓
+Base de Datos
+↓
+Dashboard Empleados
+
+REQUISITOS
+
+1. Base de datos
+Crear una tabla "reservas" con:
+
+id
+cliente
+fecha_reserva
+hora_reserva
+personas
+zona
+vista
+telefono
+comentarios
+estado
+fecha_creacion
+
+2. Backend
+Crear endpoints REST:
+
+POST /api/reservas
+GET /api/reservas
+GET /api/reservas/:id
+PUT /api/reservas/:id
+DELETE /api/reservas/:id
+
+Validar todos los datos recibidos.
+
+3. Procesador de mensajes
+Crear una función que reciba texto plano de WhatsApp y extraiga automáticamente:
+
+Cliente
+Fecha
+Hora
+Personas
+Zona
+Vista
+Teléfono
+Comentarios
+
+Debe ser tolerante a pequeños cambios de formato.
+
+4. Dashboard de empleados
+Crear una página protegida.
+
+Solo usuarios autenticados pueden acceder.
+
+Mostrar:
+
+- Tabla de reservas
+- Buscador
+- Filtro por fecha
+- Filtro por estado
+- Ordenación por hora
+- Actualización automática sin recargar
+
+5. Diseño
+No usar estilos genéricos tipo ChatGPT.
+
+Quiero un diseño moderno para hostelería:
+
+- Azul oscuro
+- Azul marino
+- Detalles turquesa
+- Tarjetas elegantes
+- Bordes suaves
+- Sombras modernas
+- Diseño responsive móvil y escritorio
+
+6. Estados de reserva
+
+Pendiente
+Confirmada
+Cancelada
+Completada
+
+Permitir cambiar el estado desde el dashboard.
+
+7. Seguridad
+
+Sistema de roles:
+
+admin
+empleado
+
+Solo empleados y administradores pueden ver reservas.
+
+8. Tiempo real
+
+Cuando entre una nueva reserva:
+
+- Guardarla automáticamente
+- Actualizar el dashboard en tiempo real
+- Mostrar notificación visual
+
+9. Preparar integración WhatsApp
+
+Crear una capa de servicios preparada para:
+
+- WhatsApp Business API
+- Baileys
+- whatsapp-web.js
+
+La lógica debe estar desacoplada para poder cambiar de proveedor sin modificar el resto del sistema.
+
+10. Código
+
+Generar código limpio.
+Separar frontend, backend, servicios y base de datos.
+Utilizar buenas prácticas.
+Añadir comentarios donde sea necesario.
+Evitar código duplicado.
+
+Además, crea la estructura completa de carpetas y archivos necesaria para esta funcionalidad antes de implementarla.

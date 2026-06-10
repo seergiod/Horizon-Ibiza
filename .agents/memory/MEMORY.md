@@ -1,0 +1,2 @@
+- [Reservation system architecture](reservation-system.md) — Express API + Drizzle + WS on port 8080; frontend at port 21110; both reachable from browser via Replit proxy at same host.
+- [Dashboard auth](dashboard-auth.md) — Simple hardcoded users (no DB), credentials via env vars, JWT 12h tokens stored in localStorage.
