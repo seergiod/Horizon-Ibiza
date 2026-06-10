@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { guardarVersionHorario, procesarImagenHorario } from "@/lib/dashboard-api";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { guardarVersionHorario, iniciarProcesamientoImagen, pollJob } from "@/lib/dashboard-api";
 
 const DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
 
@@ -12,6 +12,24 @@ interface TurnoEdit {
   seccion: string;
   notas: string;
 }
+
+type ProcessStep = "idle" | "uploading" | "processing" | "done" | "error";
+
+const STEP_LABELS: Record<ProcessStep, string> = {
+  idle:       "",
+  uploading:  "Subiendo imagen…",
+  processing: "Gemini está analizando el horario…",
+  done:       "¡Extracción completada!",
+  error:      "Error al procesar",
+};
+
+const STEP_PCT: Record<ProcessStep, number> = {
+  idle:       0,
+  uploading:  20,
+  processing: 60,
+  done:       100,
+  error:      100,
+};
 
 function getMonday(d: Date): string {
   const day = d.getDay();
@@ -26,9 +44,9 @@ function TurnoRow({ t, idx, onChange, onDelete }: {
   onDelete: (idx: number) => void;
 }) {
   const estadoColor =
-    t.estado === "trabaja"    ? { bg: "rgba(16,185,129,0.12)",  text: "#10b981" }
-    : t.estado === "libre"    ? { bg: "rgba(100,116,139,0.12)", text: "#94a3b8" }
-    : t.estado === "vacaciones" ? { bg: "rgba(251,191,36,0.12)", text: "#fbbf24" }
+    t.estado === "trabaja"      ? { bg: "rgba(16,185,129,0.12)",  text: "#10b981" }
+    : t.estado === "libre"      ? { bg: "rgba(100,116,139,0.12)", text: "#94a3b8" }
+    : t.estado === "vacaciones" ? { bg: "rgba(251,191,36,0.12)",  text: "#fbbf24" }
     : { bg: "rgba(239,68,68,0.12)", text: "#f87171" };
 
   return (
@@ -55,10 +73,10 @@ function TurnoRow({ t, idx, onChange, onDelete }: {
         <select value={t.estado} onChange={e => onChange(idx, "estado", e.target.value as TurnoEdit["estado"])}
           className="text-xs font-bold border-0 outline-none cursor-pointer rounded-full px-2 py-0.5"
           style={{ background: estadoColor.bg, color: estadoColor.text }}>
-          <option value="trabaja"     style={{ background: "#0f1d35" }}>trabaja</option>
-          <option value="libre"       style={{ background: "#0f1d35" }}>libre</option>
-          <option value="vacaciones"  style={{ background: "#0f1d35" }}>vacaciones</option>
-          <option value="modificado"  style={{ background: "#0f1d35" }}>modificado</option>
+          <option value="trabaja"    style={{ background: "#0f1d35" }}>trabaja</option>
+          <option value="libre"      style={{ background: "#0f1d35" }}>libre</option>
+          <option value="vacaciones" style={{ background: "#0f1d35" }}>vacaciones</option>
+          <option value="modificado" style={{ background: "#0f1d35" }}>modificado</option>
         </select>
       </td>
       <td className="px-2 py-1.5">
@@ -75,7 +93,9 @@ function TurnoRow({ t, idx, onChange, onDelete }: {
 export function HorarioUpload() {
   const [file,       setFile]       = useState<File | null>(null);
   const [imgURL,     setImgURL]     = useState<string | null>(null);
-  const [processing, setProcessing] = useState(false);
+  const [step,       setStep]       = useState<ProcessStep>("idle");
+  const [stepMsg,    setStepMsg]    = useState("");
+  const [elapsed,    setElapsed]    = useState(0);
   const [turnos,     setTurnos]     = useState<TurnoEdit[]>([]);
   const [semana,     setSemana]     = useState(() => getMonday(new Date()));
   const [nombre,     setNombre]     = useState("");
@@ -83,38 +103,90 @@ export function HorarioUpload() {
   const [saved,      setSaved]      = useState(false);
   const [error,      setError]      = useState("");
   const [dragOver,   setDragOver]   = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef  = useRef<HTMLInputElement>(null);
+  const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startedAt = useRef<number>(0);
+
+  // Clean up intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current)  clearInterval(pollRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   function handleFile(f: File) {
     setFile(f);
-    setTurnos([]); setSaved(false); setError("");
+    setTurnos([]); setSaved(false); setError(""); setStep("idle"); setElapsed(0);
     const url = URL.createObjectURL(f);
     setImgURL(url);
   }
 
   async function handleProcesar() {
     if (!file) return;
-    setProcessing(true); setError("");
+    setError(""); setStep("uploading"); setElapsed(0);
+    startedAt.current = Date.now();
+
+    // Elapsed timer
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startedAt.current) / 1000));
+    }, 1000);
+
+    let jobId: string;
     try {
-      const { turnos: raw } = await procesarImagenHorario(file);
-      const editables: TurnoEdit[] = raw.map(t => ({
-        empleado_nombre: t.empleado_nombre ?? "",
-        dia:             t.dia ?? "lunes",
-        hora_inicio:     t.hora_inicio ?? "",
-        hora_fin:        t.hora_fin ?? "",
-        estado:          (["libre", "vacaciones"].includes(t.estado ?? "")
-                           ? t.estado
-                           : "trabaja") as TurnoEdit["estado"],
-        seccion:         t.seccion ?? "",
-        notas:           t.notas ?? "",
-      }));
-      setTurnos(editables.length > 0 ? editables : getDefaultTurnos());
+      jobId = await iniciarProcesamientoImagen(file);
+      setStep("processing");
+      setStepMsg("Gemini está analizando el horario…");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al procesar la imagen con Gemini");
-      setTurnos(getDefaultTurnos());
-    } finally {
-      setProcessing(false);
+      setStep("error");
+      setError(e instanceof Error ? e.message : "Error al enviar la imagen");
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
     }
+
+    // Start polling every 2 s
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const job = await pollJob(jobId);
+        setStepMsg(job.message ?? "Procesando…");
+
+        if (job.status === "done" && job.result) {
+          clearInterval(pollRef.current!);
+          clearInterval(timerRef.current!);
+          pollRef.current = null; timerRef.current = null;
+
+          const editables: TurnoEdit[] = job.result.turnos.map(t => ({
+            empleado_nombre: t.empleado_nombre ?? "",
+            dia:             t.dia ?? "lunes",
+            hora_inicio:     t.hora_inicio ?? "",
+            hora_fin:        t.hora_fin ?? "",
+            estado:          (["libre", "vacaciones"].includes(t.estado ?? "")
+                               ? t.estado
+                               : "trabaja") as TurnoEdit["estado"],
+            seccion:         t.seccion ?? "",
+            notas:           t.notas ?? "",
+          }));
+          setTurnos(editables.length > 0 ? editables : getDefaultTurnos());
+          setStep("done");
+        } else if (job.status === "error") {
+          clearInterval(pollRef.current!);
+          clearInterval(timerRef.current!);
+          pollRef.current = null; timerRef.current = null;
+          setStep("error");
+          setError(job.error ?? "Error al procesar la imagen");
+          setTurnos(getDefaultTurnos());
+        }
+      } catch (e) {
+        clearInterval(pollRef.current!);
+        clearInterval(timerRef.current!);
+        pollRef.current = null; timerRef.current = null;
+        setStep("error");
+        setError(e instanceof Error ? e.message : "Error de conexión al comprobar el estado");
+      }
+    }, 2000);
   }
 
   function getDefaultTurnos(): TurnoEdit[] {
@@ -172,6 +244,9 @@ export function HorarioUpload() {
     }
   }
 
+  const isProcessing = step === "uploading" || step === "processing";
+  const pct = STEP_PCT[step];
+
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-6">
 
@@ -217,10 +292,11 @@ export function HorarioUpload() {
         onDrop={handleDrop}
         onDragOver={e => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
-        onClick={() => inputRef.current?.click()}
-        className="rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all"
+        onClick={() => !isProcessing && inputRef.current?.click()}
+        className="rounded-2xl flex flex-col items-center justify-center gap-3 transition-all"
         style={{
           minHeight: 180,
+          cursor: isProcessing ? "default" : "pointer",
           border: `2px dashed ${dragOver ? "#06b6d4" : "rgba(255,255,255,0.1)"}`,
           background: dragOver ? "rgba(6,182,212,0.05)" : "rgba(255,255,255,0.02)",
         }}>
@@ -237,20 +313,44 @@ export function HorarioUpload() {
           onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
       </div>
 
+      {/* Progress bar — shown while processing */}
+      {isProcessing && (
+        <div className="rounded-2xl overflow-hidden p-5 flex flex-col gap-3"
+          style={{ background: "#0a1628", border: "1px solid rgba(6,182,212,0.2)" }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-block w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin shrink-0" />
+              <span className="text-sm font-medium text-white">
+                {STEP_LABELS[step]}
+              </span>
+            </div>
+            <span className="text-xs text-slate-500 tabular-nums">{elapsed}s</span>
+          </div>
+          {stepMsg && step === "processing" && (
+            <p className="text-xs text-slate-400">{stepMsg}</p>
+          )}
+          <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: "rgba(255,255,255,0.06)" }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${pct}%`,
+                background: "linear-gradient(90deg,#06b6d4,#2563eb)",
+              }}
+            />
+          </div>
+          <p className="text-xs text-slate-500">
+            Gemini procesa la imagen en segundo plano — puedes seguir navegando
+          </p>
+        </div>
+      )}
+
       {/* Acción principal */}
-      {imgURL && turnos.length === 0 && (
+      {imgURL && turnos.length === 0 && !isProcessing && (
         <div className="flex gap-3">
-          <button onClick={handleProcesar} disabled={processing}
-            className="flex-1 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition-all flex items-center justify-center gap-2"
-            style={{ background: processing ? "rgba(6,182,212,0.3)" : "linear-gradient(135deg,#06b6d4,#2563eb)" }}>
-            {processing ? (
-              <>
-                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Cargando… Procesando horario con IA
-              </>
-            ) : (
-              <><span>🤖</span> Extraer horario con IA (Gemini)</>
-            )}
+          <button onClick={handleProcesar}
+            className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all flex items-center justify-center gap-2"
+            style={{ background: "linear-gradient(135deg,#06b6d4,#2563eb)" }}>
+            <span>🤖</span> Extraer horario con IA (Gemini)
           </button>
           <button onClick={() => setTurnos(getDefaultTurnos())}
             className="px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-all"
@@ -262,7 +362,7 @@ export function HorarioUpload() {
 
       {/* Cambiar imagen si ya hay resultados */}
       {imgURL && turnos.length > 0 && (
-        <button onClick={() => { setFile(null); setImgURL(null); setTurnos([]); setSaved(false); setError(""); }}
+        <button onClick={() => { setFile(null); setImgURL(null); setTurnos([]); setSaved(false); setError(""); setStep("idle"); setElapsed(0); }}
           className="text-xs text-slate-500 hover:text-slate-300 transition-colors self-start">
           ← Cambiar imagen
         </button>

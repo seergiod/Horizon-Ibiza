@@ -195,6 +195,33 @@ export async function getMisHorarios() {
   return handle<{ version: HorarioVersion | null; turnos: Turno[] }>(res);
 }
 
+export interface GeminiJob {
+  status: "pending" | "processing" | "done" | "error";
+  message: string;
+  result?: { turnos: TurnoInput[]; raw: string };
+  error?: string;
+}
+
+/** Start background Gemini processing; returns jobId immediately */
+export async function iniciarProcesamientoImagen(file: File): Promise<string> {
+  const form = new FormData();
+  form.append("imagen", file);
+  const res = await fetch(`${BASE}/horarios/procesar-imagen`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${getToken() ?? ""}` },
+    body: form,
+  });
+  const data = await handle<{ jobId: string }>(res);
+  return data.jobId;
+}
+
+/** Poll job status */
+export async function pollJob(jobId: string): Promise<GeminiJob> {
+  const res = await fetch(`${BASE}/horarios/jobs/${jobId}`, { headers: headers() });
+  return handle<GeminiJob>(res);
+}
+
+/** @deprecated use iniciarProcesamientoImagen + pollJob */
 export async function procesarImagenHorario(file: File) {
   const form = new FormData();
   form.append("imagen", file);
@@ -203,7 +230,15 @@ export async function procesarImagenHorario(file: File) {
     headers: { Authorization: `Bearer ${getToken() ?? ""}` },
     body: form,
   });
-  return handle<{ turnos: TurnoInput[]; raw: string }>(res);
+  const data = await handle<{ jobId: string }>(res);
+  // Poll until done
+  const jobId = data.jobId;
+  while (true) {
+    await new Promise(r => setTimeout(r, 2000));
+    const job = await pollJob(jobId);
+    if (job.status === "done" && job.result) return job.result;
+    if (job.status === "error") throw new Error(job.error ?? "Error desconocido");
+  }
 }
 
 export async function guardarVersionHorario(data: {

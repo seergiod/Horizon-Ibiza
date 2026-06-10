@@ -11,6 +11,37 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const router = Router();
 router.use(requireAuth);
 
+/* ── In-memory background job store ── */
+type JobStatus = "pending" | "processing" | "done" | "error";
+
+interface TurnoResult {
+  empleado_nombre: string;
+  dia: string;
+  hora_inicio: string | null;
+  hora_fin: string | null;
+  estado: "trabaja" | "libre" | "vacaciones";
+  seccion: string | null;
+  notas: null;
+}
+
+interface Job {
+  status: JobStatus;
+  message: string;
+  result?: { turnos: TurnoResult[]; raw: string };
+  error?: string;
+  createdAt: number;
+}
+
+const jobStore = new Map<string, Job>();
+
+// Clean up jobs older than 15 minutes
+setInterval(() => {
+  const cutoff = Date.now() - 15 * 60 * 1000;
+  for (const [id, job] of jobStore) {
+    if (job.createdAt < cutoff) jobStore.delete(id);
+  }
+}, 60_000);
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 const turnoSchema = z.object({
@@ -32,7 +63,91 @@ const guardarVersionSchema = z.object({
   turnos:        z.array(turnoSchema).min(1),
 });
 
+/* ── Helper: process image with Gemini (runs in background) ── */
+async function processImageJob(jobId: string, base64: string, mimeType: string, apiKey: string) {
+  const job = jobStore.get(jobId);
+  if (!job) return;
+
+  job.status = "processing";
+  job.message = "Analizando imagen con IA…";
+
+  const PROMPT = `Analiza este cuadrante de horarios de hostelería. Devuélveme ÚNICAMENTE un array JSON válido. Cero texto extra.
+REGLAS:
+- Nombres duplicados: NO fusiones empleados que se llamen igual si están en columnas/secciones distintas. Crea objetos separados diferenciados por su 'seccion'.
+- Celdas con "X" o "Cruz": Significa ausencia. Setea "estado": "vacaciones", "inicio": "", "fin": "".
+- Celdas con "LIBRE": Setea "estado": "libre", "inicio": "", "fin": "".
+- Celdas con Horario: Setea "estado": "trabaja" y extrae las horas (HH:MM).
+- "dia" debe ser uno de: lunes, martes, miércoles, jueves, viernes, sábado, domingo
+- Cruza cuidadosamente cada fila (día) con cada columna (empleado)
+- Solo incluye filas con información real, no filas vacías
+FORMATO ESTRICTO:
+[{"empleado": "Nombre", "dia": "lunes", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "sala mañana/cocina/etc"}]`;
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const geminiCall = model.generateContent([
+      { inlineData: { mimeType: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: base64 } },
+      { text: PROMPT },
+    ]);
+
+    const timeoutPromise = new Promise<never>((_resolve, reject) => {
+      setTimeout(() => {
+        reject(new Error("Gemini tardó demasiado. Prueba con una imagen más pequeña o inténtalo de nuevo."));
+      }, 120_000);
+    });
+
+    const result = await Promise.race([geminiCall, timeoutPromise]);
+    const rawText = result.response.text() ?? "";
+    logger.info({ jobId, rawLength: rawText.length }, "Respuesta recibida de Gemini");
+
+    const cleaned = rawText.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+    const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      job.status = "error";
+      job.error = "El modelo no devolvió JSON válido";
+      return;
+    }
+
+    let parsed: Array<Record<string, string>>;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch {
+      job.status = "error";
+      job.error = "La respuesta del modelo no es JSON válido";
+      return;
+    }
+
+    const estadoValido = (s: string): "trabaja" | "libre" | "vacaciones" => {
+      const lower = s.toLowerCase().trim();
+      if (lower === "libre") return "libre";
+      if (lower === "vacaciones" || lower === "x" || lower === "ausencia") return "vacaciones";
+      return "trabaja";
+    };
+
+    const turnos: TurnoResult[] = parsed.map(t => ({
+      empleado_nombre: (t.empleado ?? t.empleado_nombre ?? "").toString().trim(),
+      dia:             (t.dia ?? "").toString().toLowerCase().trim(),
+      hora_inicio:     (t.inicio ?? t.hora_inicio ?? "").toString().trim() || null,
+      hora_fin:        (t.fin ?? t.hora_fin ?? "").toString().trim() || null,
+      estado:          estadoValido(t.estado ?? ""),
+      seccion:         (t.seccion ?? "").toString().trim() || null,
+      notas:           null,
+    }));
+
+    job.status = "done";
+    job.message = `Extracción completada — ${turnos.length} turnos`;
+    job.result = { turnos, raw: rawText };
+  } catch (err) {
+    logger.error({ jobId, err }, "Error procesando imagen con Gemini");
+    job.status = "error";
+    job.error = err instanceof Error ? err.message : "Error desconocido al procesar la imagen";
+  }
+}
+
 /* ── POST /api/horarios/procesar-imagen ── admin only ── */
+/* Returns { jobId } immediately; processing runs in background */
 router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: "No se recibió ninguna imagen" });
@@ -45,86 +160,35 @@ router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), 
     return;
   }
 
-  try {
-    const base64 = req.file.buffer.toString("base64");
-    const mimeType = (req.file.mimetype || "image/jpeg") as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+  const jobId = crypto.randomUUID();
+  const base64 = req.file.buffer.toString("base64");
+  const mimeType = req.file.mimetype || "image/jpeg";
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  jobStore.set(jobId, {
+    status: "pending",
+    message: "Imagen recibida, iniciando análisis…",
+    createdAt: Date.now(),
+  });
 
-    const PROMPT = `Analiza este cuadrante de horarios de hostelería. Devuélveme ÚNICAMENTE un array JSON válido. Cero texto extra.
-REGLAS:
-- Nombres duplicados: NO fusiones empleados que se llamen igual si están en columnas/secciones distintas. Crea objetos separados diferenciados por su 'seccion'.
-- Celdas con "X" o "Cruz": Significa ausencia. Setea "estado": "vacaciones", "inicio": "", "fin": "".
-- Celdas con "LIBRE": Setea "estado": "libre", "inicio": "", "fin": "".
-- Celdas con Horario: Setea "estado": "trabaja" y extrae las horas (HH:MM).
-- "dia" debe ser uno de: lunes, martes, miércoles, jueves, viernes, sábado, domingo
-- Cruza cuidadosamente cada fila (día) con cada columna (empleado)
-- Solo incluye filas con información real, no filas vacías
-FORMATO ESTRICTO:
-[{"empleado": "Nombre", "dia": "lunes", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "sala mañana/cocina/etc"}]`;
+  // Fire and forget — client polls for result
+  processImageJob(jobId, base64, mimeType, apiKey);
 
-    // Race the Gemini call against a 55-second timeout so we always respond
-    // before the Replit proxy (60 s) cuts the connection and returns a 502.
-    const TIMEOUT_MS = 55_000;
+  res.json({ jobId });
+});
 
-    const geminiCall = model.generateContent([
-      { inlineData: { mimeType, data: base64 } },
-      { text: PROMPT },
-    ]);
-
-    const timeoutPromise = new Promise<never>((_resolve, reject) => {
-      setTimeout(() => {
-        reject(new Error("Gemini tardó demasiado (>55 s). Prueba con una imagen más pequeña o inténtalo de nuevo."));
-      }, TIMEOUT_MS);
-    });
-
-    const result = await Promise.race([geminiCall, timeoutPromise]);
-
-    const rawText = result.response.text() ?? "";
-    logger.info({ rawLength: rawText.length }, "Respuesta recibida de Gemini");
-
-    // Strip markdown code blocks if present, then extract JSON array
-    const cleaned = rawText.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
-    const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      logger.warn({ rawText }, "No se encontró JSON en la respuesta");
-      res.status(422).json({ error: "El modelo no devolvió JSON válido", raw: rawText });
-      return;
-    }
-
-    let parsed: Array<Record<string, string>>;
-    try {
-      parsed = JSON.parse(jsonMatch[0]);
-    } catch {
-      logger.warn({ raw: jsonMatch[0] }, "JSON inválido tras limpieza");
-      res.status(422).json({ error: "La respuesta del modelo no es JSON válido", raw: rawText });
-      return;
-    }
-
-    const estadoValido = (s: string): "trabaja" | "libre" | "vacaciones" => {
-      const lower = s.toLowerCase().trim();
-      if (lower === "libre") return "libre";
-      if (lower === "vacaciones" || lower === "x" || lower === "ausencia") return "vacaciones";
-      return "trabaja";
-    };
-
-    const turnos = parsed.map(t => ({
-      empleado_nombre: (t.empleado ?? t.empleado_nombre ?? "").toString().trim(),
-      dia:             (t.dia ?? "").toString().toLowerCase().trim(),
-      hora_inicio:     (t.inicio ?? t.hora_inicio ?? "").toString().trim() || null,
-      hora_fin:        (t.fin ?? t.hora_fin ?? "").toString().trim() || null,
-      estado:          estadoValido(t.estado ?? ""),
-      seccion:         (t.seccion ?? "").toString().trim() || null,
-      notas:           null,
-    }));
-
-    res.json({ turnos, raw: rawText });
-  } catch (err) {
-    logger.error({ err }, "Error procesando imagen con Gemini");
-    const msg = err instanceof Error ? err.message : "Error desconocido";
-    res.status(500).json({ error: `Error al procesar la imagen: ${msg}` });
+/* ── GET /api/horarios/jobs/:id ── admin only ── */
+router.get("/horarios/jobs/:id", requireAdmin, (req, res) => {
+  const job = jobStore.get(req.params.id);
+  if (!job) {
+    res.status(404).json({ error: "Job no encontrado o expirado" });
+    return;
   }
+  res.json({
+    status:  job.status,
+    message: job.message,
+    result:  job.result,
+    error:   job.error,
+  });
 });
 
 /* ── GET /api/horarios/versiones ── */
