@@ -49,7 +49,7 @@ args = "PORT=21110 BASE_PATH=/ pnpm --filter @workspace/book-ibiza-now run dev"
 waitForPort = 21110
 
 [agent]
-stack = "PNPM_WORKSPACE"
+stack = "BEST_EFFORT_FALLBACK"
 expertMode = true
 
 [postMerge]
@@ -73,3 +73,7 @@ externalPort = 3000
 [userenv.shared]
 JWT_SECRET = "9a173d94268495d225804a122712087578fd044f95a9bd29db394f790323d2e3"
 PORT = "8080"
+CORS_ORIGINS = "http://localhost:21110"
+
+[nix]
+channel = "stable-25_05"

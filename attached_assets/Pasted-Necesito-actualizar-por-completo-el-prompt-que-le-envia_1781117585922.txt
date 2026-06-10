@@ -1,0 +1,41 @@
+Necesito actualizar por completo el prompt que le enviamos a Gemini para procesar las imágenes de los horarios. Ahora mismo hay dos fallos: está fusionando a los empleados que se llaman igual (eliminando a uno de ellos) y no sabe qué hacer cuando una celda tiene una "X" (que significa baja, vacaciones o ausencia).
+
+Modifica las instrucciones y el prompt interno de la llamada a Gemini por este texto exacto:
+
+"""
+Actúa como un extractor de datos de alta precisión para cuadrantes de horarios de hostelería. Analiza la imagen proporcionada, cruza las columnas de los empleados con las filas de los días de la semana y devuélveme ÚNICAMENTE un array JSON válido, sin bloques de código markdown (sin ```json) y sin texto extra.
+
+REGLAS DE PROCESAMIENTO CRÍTICAS:
+
+1. EMPLEADOS DUPLICADOS (Nombres repetidos):
+   Si hay dos o más empleados con el mismo nombre de pila (por ejemplo, en secciones distintas), NO los fusiones bajo ningún concepto. Trátalos como personas totalmente independientes y crea registros separados para cada uno, diferenciándolos por la 'seccion' donde está su columna.
+
+2. CELDAS CON UNA "X":
+   Si la celda de un día para un empleado contiene una "X" (o una cruz dibujada/escrita), significa que el empleado está ausente. En ese caso, debes setear:
+   - "estado": "vacaciones" (o "baja" según corresponda, o simplemente "ausente")
+   - "inicio": ""
+   - "fin": ""
+
+3. CELDAS CON "LIBRE":
+   Si la celda dice explícitamente 'LIBRE', setea:
+   - "estado": "libre"
+   - "inicio": ""
+   - "fin": ""
+
+4. CELDAS CON HORARIO (Ej: '09:00 a 17:00' o 'T2'):
+   Setea "estado": "trabaja" y extrae las horas de inicio y fin en formato HH:MM. Si es un turno tipo 'T2', pon en el estado 'trabaja' y mapea el horario correspondiente a ese turno si figura en la leyenda.
+
+FORMATO DEL JSON A DEVOLVER:
+[
+  {
+    "empleado": "Nombre exacto del empleado",
+    "dia": "lunes/martes/miércoles/jueves/viernes/sábado/domingo",
+    "inicio": "HH:MM",
+    "fin": "HH:MM",
+    "estado": "trabaja / libre / vacaciones",
+    "seccion": "Nombre de la sección exacta (ej: sala mañana, sala tarde, cocina, piscina)"
+  }
+]
+"""
+
+Por favor, actualiza el código del backend con este nuevo prompt para que Gemini procese las bajas con "X" y los nombres duplicados correctamente.
