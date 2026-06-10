@@ -7,6 +7,7 @@ import { AdminUsers } from "./dashboard/AdminUsers";
 import { AdminImport } from "./dashboard/AdminImport";
 import { HorarioUpload } from "./dashboard/HorarioUpload";
 import { HorarioView } from "./dashboard/HorarioView";
+import { AuditPanel } from "./dashboard/AuditPanel";
 
 /* ── Login Screen ── */
 function LoginScreen({ onLogin }: { onLogin: (token: string, role: string) => void }) {
@@ -65,6 +66,7 @@ const NAV_ITEMS_ADMIN = [
   { path: "/dashboard/admin/horarios", icon: "📤", label: "Subir Horario" },
   { path: "/dashboard/admin/users",    icon: "👥", label: "Usuarios" },
   { path: "/dashboard/admin/import",   icon: "📥", label: "Importar" },
+  { path: "/dashboard/admin/auditoria", icon: "📊", label: "Auditoría" },
 ];
 
 function Sidebar({ role, onLogout, mobileOpen, onClose }: {
@@ -126,12 +128,13 @@ function DashboardLayout({ role, onLogout, wsStatus }: { role: string; onLogout:
   const { pathname } = useLocation();
 
   const pageTitle: Record<string, string> = {
-    "/dashboard/reservas":        "Reservas",
-    "/dashboard/calendar":        "Calendario",
-    "/dashboard/horarios":        "Mi Horario",
-    "/dashboard/admin/horarios":  "Subir Horario",
-    "/dashboard/admin/users":     "Gestión de usuarios",
-    "/dashboard/admin/import":    "Importar usuarios",
+    "/dashboard/reservas":          "Reservas",
+    "/dashboard/calendar":          "Calendario",
+    "/dashboard/horarios":          "Mi Horario",
+    "/dashboard/admin/horarios":    "Subir Horario",
+    "/dashboard/admin/users":       "Gestión de usuarios",
+    "/dashboard/admin/import":      "Importar usuarios",
+    "/dashboard/admin/auditoria":   "Panel de Auditoría",
   };
 
   return (
@@ -156,9 +159,10 @@ function DashboardLayout({ role, onLogout, wsStatus }: { role: string; onLogout:
             <Route path="calendar"       element={<CalendarView />} />
             <Route path="horarios"       element={<HorarioView role={role} />} />
             {role === "admin" && <>
-              <Route path="admin/horarios" element={<HorarioUpload />} />
-              <Route path="admin/users"    element={<AdminUsers />} />
-              <Route path="admin/import"   element={<AdminImport />} />
+              <Route path="admin/horarios"   element={<HorarioUpload />} />
+              <Route path="admin/users"      element={<AdminUsers />} />
+              <Route path="admin/import"     element={<AdminImport />} />
+              <Route path="admin/auditoria"  element={<AuditPanel />} />
             </>}
             <Route path="*" element={<Navigate to="/dashboard/reservas" replace />} />
           </Routes>

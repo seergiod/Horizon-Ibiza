@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+import { logEvent } from "@/lib/dashboard-api";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
@@ -25,6 +26,8 @@ const SIGNATURES = [
 export function Home() {
   const { t } = useTranslation();
   const reduce = useReducedMotion();
+
+  useEffect(() => { logEvent("VISITA_WEB"); }, []);
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress: heroScroll } = useScroll({
     target: heroRef,

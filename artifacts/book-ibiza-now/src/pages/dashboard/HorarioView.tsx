@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { getMisHorarios, getVersionesHorario, getVersionHorario, listUsers, actualizarTurno, type DashUser } from "@/lib/dashboard-api";
+import { getMisHorarios, getVersionesHorario, getVersionHorario, listUsers, actualizarTurno, logEvent, type DashUser } from "@/lib/dashboard-api";
 
 const DIAS_ORDER = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
 
@@ -324,6 +324,9 @@ function WhatsAppBtn({ empleado, turnos, semana, users }: {
       ? `https://wa.me/${telefono}?text=${encoded}`
       : `https://web.whatsapp.com/send?text=${encoded}`;
     window.open(url, "_blank", "noopener,noreferrer");
+    const seccion = turnos.find(t => t.empleado_nombre === empleado && t.seccion)?.seccion;
+    const label = seccion ? `${empleado} (${seccion})` : empleado;
+    logEvent("NOTIFICACION_ENVIADA", label);
   }
 
   return (

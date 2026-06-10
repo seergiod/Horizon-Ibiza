@@ -5,6 +5,7 @@ import reservasRouter from "./reservas.js";
 import whatsappRouter from "./whatsapp.js";
 import usersRouter from "./users.js";
 import horariosRouter from "./horarios.js";
+import auditRouter from "./audit.js";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(reservasRouter);
 router.use(whatsappRouter);
 router.use(usersRouter);
 router.use(horariosRouter);
+router.use(auditRouter);
 
 export default router;

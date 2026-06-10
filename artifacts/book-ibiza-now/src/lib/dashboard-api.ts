@@ -255,6 +255,37 @@ export async function guardarVersionHorario(data: {
   return handle<HorarioVersion & { cambios: string[] }>(res);
 }
 
+export interface AuditLog {
+  id: number;
+  timestamp: string;
+  evento: string;
+  detalle: string | null;
+  ip: string | null;
+}
+
+export interface Metrics {
+  visitasHoy:     number;
+  notificaciones: { empleado: string; total: number }[];
+  ultimas10:      AuditLog[];
+}
+
+export async function logEvent(evento: string, detalle?: string): Promise<void> {
+  try {
+    await fetch(`${BASE}/audit/log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ evento, detalle }),
+    });
+  } catch {
+    // fire-and-forget — never throw
+  }
+}
+
+export async function getMetrics(): Promise<Metrics> {
+  const res = await fetch(`${BASE}/admin/metrics`, { headers: headers() });
+  return handle<Metrics>(res);
+}
+
 export async function actualizarTurno(id: number, data: {
   hora_inicio?: string | null;
   hora_fin?: string | null;
