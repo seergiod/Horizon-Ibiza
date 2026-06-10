@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   listReservas, updateReserva, deleteReserva,
   parseWhatsApp, createReserva, getToken,
-  type Reserva, type EstadoReserva,
+  type Reserva, type EstadoReserva, type PaginatedReservas,
 } from "@/lib/dashboard-api";
 
 export const ESTADO_LABELS: Record<EstadoReserva, string> = {
@@ -96,7 +96,10 @@ export function ReservasList({ wsRef }: { wsRef?: React.RefObject<WebSocket | nu
   const load = useCallback(async () => {
     if (!getToken()) return;
     setLoading(true);
-    try { setReservas(await listReservas({ q: filters.q || undefined, fecha: filters.fecha || undefined, estado: filters.estado || undefined })); }
+    try { 
+      const result = await listReservas({ q: filters.q || undefined, fecha: filters.fecha || undefined, estado: filters.estado || undefined }); 
+      setReservas(result.items); 
+    }
     catch { /* silent */ } finally { setLoading(false); }
   }, [filters]);
 

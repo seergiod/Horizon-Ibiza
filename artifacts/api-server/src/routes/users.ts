@@ -3,6 +3,8 @@ import { db, usersTable } from "@workspace/db";
 import { eq, or, and } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { hashPassword } from "../lib/auth.js";
+import { respondError, Errors, AppError } from "../lib/errors.js";
+import { rateLimit } from "../lib/rate-limit.js";
 import * as XLSX from "xlsx";
 import multer from "multer";
 import { z } from "zod";
@@ -47,43 +49,58 @@ router.get("/users", requireAdmin, async (_req, res) => {
       .from(usersTable)
       .orderBy(usersTable.fecha_creacion);
     res.json(rows);
-  } catch {
-    res.status(500).json({ error: "Error al obtener usuarios" });
+  } catch (err) {
+    respondError(res, Errors.DB_ERROR("usuarios", "obtener"));
   }
 });
 
 /* ── GET /api/users/:id ── */
 router.get("/users/:id", requireAdmin, async (req, res) => {
-  const id = Number(req.params.id);
-  if (!id) { res.status(400).json({ error: "ID inválido" }); return; }
-  const [user] = await db
-    .select({
-      id: usersTable.id,
-      nombre: usersTable.nombre,
-      apellidos: usersTable.apellidos,
-      dni: usersTable.dni,
-      email: usersTable.email,
-      username: usersTable.username,
-      telefono: usersTable.telefono,
-      rol: usersTable.rol,
-      estado: usersTable.estado,
-      fecha_creacion: usersTable.fecha_creacion,
-    })
-    .from(usersTable)
-    .where(eq(usersTable.id, id));
-  if (!user) { res.status(404).json({ error: "Usuario no encontrado" }); return; }
-  res.json(user);
+  try {
+    const id = Number(req.params.id);
+    if (!id) {
+      respondError(res, Errors.INVALID_ID);
+      return;
+    }
+    const [user] = await db
+      .select({
+        id: usersTable.id,
+        nombre: usersTable.nombre,
+        apellidos: usersTable.apellidos,
+        dni: usersTable.dni,
+        email: usersTable.email,
+        username: usersTable.username,
+        telefono: usersTable.telefono,
+        rol: usersTable.rol,
+        estado: usersTable.estado,
+        fecha_creacion: usersTable.fecha_creacion,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, id));
+    if (!user) {
+      respondError(res, Errors.NOT_FOUND("Usuario"));
+      return;
+    }
+    res.json(user);
+  } catch (err) {
+    respondError(res, Errors.DB_ERROR("usuario", "obtener"));
+  }
 });
 
 /* ── POST /api/users ── */
-router.post("/users", requireAdmin, async (req, res) => {
-  const parsed = createUserSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Datos inválidos", details: parsed.error.issues });
-    return;
-  }
-  const { password, ...rest } = parsed.data;
+// Rate limit: 10 user creations per 15 minutes per IP
+router.post(
+  "/users",
+  requireAdmin,
+  rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }),
+  async (req, res) => {
   try {
+    const parsed = createUserSchema.safeParse(req.body);
+    if (!parsed.success) {
+      respondError(res, Errors.INVALID_DATA(parsed.error.issues));
+      return;
+    }
+    const { password, ...rest } = parsed.data;
     const [created] = await db.insert(usersTable).values({
       ...rest,
       password_hash: await hashPassword(password),
@@ -96,54 +113,72 @@ router.post("/users", requireAdmin, async (req, res) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "";
     if (msg.includes("unique") || msg.includes("duplicate")) {
-      res.status(409).json({ error: "El email, username o DNI ya existe" });
+      respondError(res, new AppError("DUPLICATE_KEY", "El email, username o DNI ya existe", 409));
     } else {
-      res.status(500).json({ error: "Error al crear usuario" });
+      respondError(res, Errors.DB_ERROR("usuario", "crear"));
     }
   }
 });
 
 /* ── PUT /api/users/:id ── */
 router.put("/users/:id", requireAdmin, async (req, res) => {
-  const id = Number(req.params.id);
-  if (!id) { res.status(400).json({ error: "ID inválido" }); return; }
-  const parsed = updateUserSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Datos inválidos", details: parsed.error.issues });
-    return;
-  }
-  const { password, ...rest } = parsed.data;
-  const updateData: Record<string, unknown> = { ...rest };
-  if (password) updateData.password_hash = await hashPassword(password);
-
   try {
+    const id = Number(req.params.id);
+    if (!id) {
+      respondError(res, Errors.INVALID_ID);
+      return;
+    }
+    const parsed = updateUserSchema.safeParse(req.body);
+    if (!parsed.success) {
+      respondError(res, Errors.INVALID_DATA(parsed.error.issues));
+      return;
+    }
+    const { password, ...rest } = parsed.data;
+    const updateData: Record<string, unknown> = { ...rest };
+    if (password) updateData.password_hash = await hashPassword(password);
     const [updated] = await db.update(usersTable).set(updateData).where(eq(usersTable.id, id)).returning({
       id: usersTable.id, nombre: usersTable.nombre, email: usersTable.email,
       username: usersTable.username, rol: usersTable.rol, estado: usersTable.estado,
     });
-    if (!updated) { res.status(404).json({ error: "Usuario no encontrado" }); return; }
+    if (!updated) {
+      respondError(res, Errors.NOT_FOUND("Usuario"));
+      return;
+    }
     res.json(updated);
-  } catch {
-    res.status(500).json({ error: "Error al actualizar usuario" });
+  } catch (err) {
+    respondError(res, Errors.DB_ERROR("usuario", "actualizar"));
   }
 });
 
 /* ── DELETE /api/users/:id ── */
 router.delete("/users/:id", requireAdmin, async (req, res) => {
-  const id = Number(req.params.id);
-  if (!id) { res.status(400).json({ error: "ID inválido" }); return; }
-  const [deleted] = await db.delete(usersTable).where(eq(usersTable.id, id)).returning({ id: usersTable.id });
-  if (!deleted) { res.status(404).json({ error: "Usuario no encontrado" }); return; }
-  res.json({ ok: true });
+  try {
+    const id = Number(req.params.id);
+    if (!id) {
+      respondError(res, Errors.INVALID_ID);
+      return;
+    }
+    const [deleted] = await db.delete(usersTable).where(eq(usersTable.id, id)).returning({ id: usersTable.id });
+    if (!deleted) {
+      respondError(res, Errors.NOT_FOUND("Usuario"));
+      return;
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    respondError(res, Errors.DB_ERROR("usuario", "eliminar"));
+  }
 });
 
 /* ── POST /api/users/import ── */
 router.post("/users/import", requireAdmin, upload.single("file"), async (req, res) => {
-  if (!req.file) { res.status(400).json({ error: "Archivo requerido" }); return; }
+  try {
+    if (!req.file) {
+      respondError(res, new AppError("NO_FILE", "Archivo requerido", 400));
+      return;
+    }
 
   const dryRun = req.query.dryrun === "true";
 
-  try {
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
@@ -233,7 +268,7 @@ router.post("/users/import", requireAdmin, upload.single("file"), async (req, re
       preview: preview.slice(0, 50),
     });
   } catch (err) {
-    res.status(500).json({ error: "Error al procesar el archivo" });
+    respondError(res, Errors.PARSE_ERROR());
   }
 });
 
