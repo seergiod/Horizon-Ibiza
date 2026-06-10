@@ -34,6 +34,14 @@ export interface CalendarDay {
   personas: number;
 }
 
+export interface PaginatedReservas {
+  items: Reserva[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}
+
 let _token: string | null = null;
 
 export function setToken(t: string | null) {
@@ -77,13 +85,15 @@ export async function login(username: string, password: string) {
 }
 
 /* ── Reservas ── */
-export async function listReservas(params?: { fecha?: string; estado?: string; q?: string }) {
+export async function listReservas(params?: { fecha?: string; estado?: string; q?: string; limit?: number; offset?: number }) {
   const sp = new URLSearchParams();
   if (params?.fecha) sp.set("fecha", params.fecha);
   if (params?.estado) sp.set("estado", params.estado);
   if (params?.q) sp.set("q", params.q);
+  if (params?.limit) sp.set("limit", String(params.limit));
+  if (params?.offset) sp.set("offset", String(params.offset));
   const res = await fetch(`${BASE}/reservas?${sp}`, { headers: headers() });
-  return handle<Reserva[]>(res);
+  return handle<PaginatedReservas>(res);
 }
 
 export async function createReserva(data: Omit<Reserva, "id" | "fecha_creacion">) {

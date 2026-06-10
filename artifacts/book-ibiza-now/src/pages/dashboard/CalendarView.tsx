@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getCalendar, listReservas, type CalendarDay, type Reserva } from "@/lib/dashboard-api";
+import { getCalendar, listReservas, type CalendarDay, type Reserva, type PaginatedReservas } from "@/lib/dashboard-api";
 
 const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DAYS_ES   = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
@@ -43,7 +43,10 @@ export function CalendarView() {
     if (selectedDay === dateStr) { setSelectedDay(null); return; }
     setSelectedDay(dateStr);
     setDayLoading(true);
-    try { setDayReservas(await listReservas({ fecha: dateStr })); }
+    try { 
+      const result = await listReservas({ fecha: dateStr }); 
+      setDayReservas(result.items); 
+    }
     catch { setDayReservas([]); }
     finally { setDayLoading(false); }
   }

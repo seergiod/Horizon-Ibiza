@@ -1,5 +1,5 @@
 import {
-  pgTable, serial, text, timestamp, integer, pgEnum,
+  pgTable, serial, text, timestamp, integer, pgEnum, index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -24,7 +24,15 @@ export const reservasTable = pgTable("reservas", {
   estado:          estadoEnum("estado").notNull().default("pendiente"),
   fuente:          text("fuente").default("manual"),
   fecha_creacion:  timestamp("fecha_creacion").defaultNow().notNull(),
-});
+}, (table) => ({
+  // Índices para búsquedas frecuentes
+  idxFechaReserva:  index("idx_fecha_reserva").on(table.fecha_reserva),
+  idxEstado:        index("idx_estado").on(table.estado),
+  idxCliente:       index("idx_cliente").on(table.cliente),
+  idxFechaCreacion: index("idx_fecha_creacion").on(table.fecha_creacion),
+  // Índice compuesto para filtros combinados (estado + fecha)
+  idxEstadoFecha:   index("idx_estado_fecha").on(table.estado, table.fecha_reserva),
+}));
 
 export const insertReservaSchema = createInsertSchema(reservasTable).omit({
   id: true,
