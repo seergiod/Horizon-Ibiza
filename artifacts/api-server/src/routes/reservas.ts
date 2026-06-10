@@ -10,28 +10,63 @@ import { sanitizeQuery } from "../lib/pii.js";
 
 const router = Router();
 
-/* ── POST /api/reservas/public  (sin auth — formulario web de clientes) ── */
+/* ── In-memory verification store (TTL: 30 min) ── */
+interface Pending { token: string; digits: string; expiresAt: number; }
+const pendingMap = new Map<number, Pending>();
+
+function digits(phone: string) { return phone.replace(/\D/g, ""); }
+function cleanPending() {
+  const now = Date.now();
+  for (const [id, v] of pendingMap) { if (v.expiresAt < now) pendingMap.delete(id); }
+}
+
+/* ── POST /api/reservas/public  (sin auth — formulario web) ── */
 router.post(
   "/reservas/public",
   rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 5, message: "Demasiadas solicitudes. Intenta de nuevo en 15 minutos." }),
   async (req, res) => {
     try {
-      const body = {
-        ...req.body,
-        fuente: "web",
-        estado: "pendiente",
-      };
+      const body = { ...req.body, fuente: "web", estado: "pendiente" };
       const parsed = insertReservaSchema.safeParse(body);
-      if (!parsed.success) {
-        respondError(res, Errors.INVALID_DATA(parsed.error.issues));
-        return;
-      }
+      if (!parsed.success) { respondError(res, Errors.INVALID_DATA(parsed.error.issues)); return; }
       const [created] = await db.insert(reservasTable).values(parsed.data).returning();
       broadcast("reserva_nueva", created);
-      res.status(201).json({ ok: true, id: created.id });
+
+      cleanPending();
+      const token = crypto.randomUUID();
+      pendingMap.set(created.id, { token, digits: digits(parsed.data.telefono), expiresAt: Date.now() + 30 * 60_000 });
+
+      res.status(201).json({ ok: true, id: created.id, token });
     } catch (err) {
       logger.error({ err }, "Error creando reserva pública");
       respondError(res, Errors.DB_ERROR("reserva", "crear"));
+    }
+  },
+);
+
+/* ── POST /api/reservas/confirm  (sin auth — verificación de teléfono) ── */
+router.post(
+  "/reservas/confirm",
+  rateLimit({ windowMs: 5 * 60 * 1000, maxRequests: 10, message: "Demasiados intentos. Espera 5 minutos." }),
+  async (req, res) => {
+    const { id, token, phone } = req.body ?? {};
+    if (!id || !token || !phone) { res.status(400).json({ error: "Datos incompletos" }); return; }
+
+    const pending = pendingMap.get(Number(id));
+    if (!pending) { res.status(400).json({ error: "Reserva no encontrada o código expirado" }); return; }
+    if (pending.expiresAt < Date.now()) { pendingMap.delete(Number(id)); res.status(400).json({ error: "El código ha expirado. Por favor realiza la reserva de nuevo." }); return; }
+    if (pending.token !== String(token)) { res.status(400).json({ error: "Token inválido" }); return; }
+    if (pending.digits !== digits(String(phone))) { res.status(400).json({ error: "El teléfono no coincide con el que introdujiste al reservar" }); return; }
+
+    try {
+      const [updated] = await db.update(reservasTable).set({ estado: "confirmada" }).where(eq(reservasTable.id, Number(id))).returning();
+      if (!updated) { res.status(404).json({ error: "Reserva no encontrada" }); return; }
+      pendingMap.delete(Number(id));
+      broadcast("reserva_actualizada", updated);
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error({ err }, "Error confirmando reserva");
+      res.status(500).json({ error: "Error interno" });
     }
   },
 );
