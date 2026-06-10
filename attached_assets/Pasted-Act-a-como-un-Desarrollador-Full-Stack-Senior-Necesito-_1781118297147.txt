@@ -1,0 +1,35 @@
+Actúa como un Desarrollador Full-Stack Senior. Necesito reestructurar de forma robusta la lógica de procesamiento de horarios y el sistema de notificaciones de mi proyecto "Horizon-Ibiza" para que sea 100% funcional, a prueba de fallos y GRATUITO. 
+
+Por favor, implementa estas modificaciones paso a paso en el código:
+
+1. CONFIGURACIÓN E INTEGRACIÓN DE GEMINI (BACKEND):
+   - Configura el backend para procesar imágenes usando la API oficial de Google Gemini ('@google/genai' en Node.js o 'google-genai' en Python).
+   - Lee la clave desde la variable de entorno: GEMINI_API_KEY. 
+   - Usa el modelo "gemini-2.5-flash".
+   - IMPORTANTE: Asegúrate de que el endpoint que recibe la imagen soporte correctamente la subida de archivos (ej. usando 'multer' si es Express) y convierta la imagen al formato requerido por la API de Gemini.
+
+2. PROMPT DE EXTRACCIÓN Y LIMPIEZA DE DATOS (BACKEND):
+   Envía a Gemini la imagen junto con estas instrucciones exactas:
+   """
+   Analiza este cuadrante de horarios de hostelería. Devuélveme ÚNICAMENTE un array JSON válido. Cero texto extra.
+   REGLAS:
+   - Nombres duplicados: NO fusiones empleados que se llamen igual si están en columnas/secciones distintas. Crea objetos separados diferenciados por su 'seccion'.
+   - Celdas con "X" o "Cruz": Significa ausencia. Setea "estado": "vacaciones", "inicio": "", "fin": "".
+   - Celdas con "LIBRE": Setea "estado": "libre", "inicio": "", "fin": "".
+   - Celdas con Horario: Setea "estado": "trabaja" y extrae las horas (HH:MM).
+   FORMATO ESTRICTO:
+   [{"empleado": "Nombre", "dia": "lunes...", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "sala mañana/cocina/etc"}]
+   """
+   - MANEJO DE ERRORES CRÍTICO: Antes de parsear la respuesta de Gemini a JSON en el backend, límpiala. Elimina cualquier bloque markdown (```json y ```) que el modelo haya podido insertar por error. Envuelve todo en un bloque try/catch para evitar que el servidor crashee si la IA devuelve un formato inválido.
+
+3. ESTADO DE CARGA EN EL FRONTEND (UX):
+   - Al enviar la imagen a procesar, el frontend debe mostrar un estado de "Cargando... Procesando horario con IA" y bloquear el botón, ya que Gemini puede tardar varios segundos en responder.
+
+4. SISTEMA DE WHATSAPP GRATUITO (FRONTEND):
+   - Elimina cualquier dependencia de Twilio.
+   - En el frontend, en el botón de "Enviar Horario", implementa una función que abra una pestaña nueva de WhatsApp Web (window.open).
+   - Genera el texto del mensaje con esta plantilla estructurada y amigable:
+     "¡Hola [Nombre]! 👋 Aquí tienes tu horario de esta semana en Horizon Ibiza:\n\n[Día 1]: [Turno/Libre]\n[Día 2]: [Turno/Libre]\n...\n\n¡Cualquier duda, avísame! 🏖️"
+   - Usa 'encodeURIComponent()' en el texto generado y pásalo a la URL: `https://wa.me/${telefono}?text=${textoCodificado}`.
+
+Aplica todos estos cambios en la arquitectura actual, asegurándote de no romper las rutas existentes, y avísame detallando qué archivos has modificado.

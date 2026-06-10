@@ -3,7 +3,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
-export const estadoTurnoEnum = pgEnum("estado_turno", ["trabaja", "libre", "modificado"]);
+export const estadoTurnoEnum = pgEnum("estado_turno", ["trabaja", "libre", "modificado", "vacaciones"]);
 
 export const horarioVersionesTable = pgTable("horario_versiones", {
   id:             serial("id").primaryKey(),

@@ -8,7 +8,7 @@ interface TurnoEdit {
   dia: string;
   hora_inicio: string;
   hora_fin: string;
-  estado: "trabaja" | "libre" | "modificado";
+  estado: "trabaja" | "libre" | "modificado" | "vacaciones";
   seccion: string;
   notas: string;
 }
@@ -25,10 +25,10 @@ function TurnoRow({ t, idx, onChange, onDelete }: {
   onChange: (idx: number, field: keyof TurnoEdit, val: string) => void;
   onDelete: (idx: number) => void;
 }) {
-  const estadoColor = t.estado === "trabaja"
-    ? { bg: "rgba(16,185,129,0.12)", text: "#10b981" }
-    : t.estado === "libre"
-    ? { bg: "rgba(100,116,139,0.12)", text: "#94a3b8" }
+  const estadoColor =
+    t.estado === "trabaja"    ? { bg: "rgba(16,185,129,0.12)",  text: "#10b981" }
+    : t.estado === "libre"    ? { bg: "rgba(100,116,139,0.12)", text: "#94a3b8" }
+    : t.estado === "vacaciones" ? { bg: "rgba(251,191,36,0.12)", text: "#fbbf24" }
     : { bg: "rgba(239,68,68,0.12)", text: "#f87171" };
 
   return (
@@ -55,9 +55,10 @@ function TurnoRow({ t, idx, onChange, onDelete }: {
         <select value={t.estado} onChange={e => onChange(idx, "estado", e.target.value as TurnoEdit["estado"])}
           className="text-xs font-bold border-0 outline-none cursor-pointer rounded-full px-2 py-0.5"
           style={{ background: estadoColor.bg, color: estadoColor.text }}>
-          <option value="trabaja"    style={{ background: "#0f1d35" }}>trabaja</option>
-          <option value="libre"      style={{ background: "#0f1d35" }}>libre</option>
-          <option value="modificado" style={{ background: "#0f1d35" }}>modificado</option>
+          <option value="trabaja"     style={{ background: "#0f1d35" }}>trabaja</option>
+          <option value="libre"       style={{ background: "#0f1d35" }}>libre</option>
+          <option value="vacaciones"  style={{ background: "#0f1d35" }}>vacaciones</option>
+          <option value="modificado"  style={{ background: "#0f1d35" }}>modificado</option>
         </select>
       </td>
       <td className="px-2 py-1.5">
@@ -101,13 +102,15 @@ export function HorarioUpload() {
         dia:             t.dia ?? "lunes",
         hora_inicio:     t.hora_inicio ?? "",
         hora_fin:        t.hora_fin ?? "",
-        estado:          (t.estado === "libre" ? "libre" : "trabaja") as TurnoEdit["estado"],
+        estado:          (["libre", "vacaciones"].includes(t.estado ?? "")
+                           ? t.estado
+                           : "trabaja") as TurnoEdit["estado"],
         seccion:         t.seccion ?? "",
         notas:           t.notas ?? "",
       }));
       setTurnos(editables.length > 0 ? editables : getDefaultTurnos());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al procesar la imagen con el modelo de visión");
+      setError(e instanceof Error ? e.message : "Error al procesar la imagen con Gemini");
       setTurnos(getDefaultTurnos());
     } finally {
       setProcessing(false);
@@ -177,7 +180,7 @@ export function HorarioUpload() {
         <div>
           <h2 className="text-xl font-bold text-white">Subir horario</h2>
           <p className="text-sm text-slate-400 mt-0.5">
-            Sube una foto — el modelo de visión IA extrae los datos automáticamente
+            Sube una foto — Gemini extrae los datos automáticamente
           </p>
         </div>
         {turnos.length > 0 && (
@@ -239,11 +242,14 @@ export function HorarioUpload() {
         <div className="flex gap-3">
           <button onClick={handleProcesar} disabled={processing}
             className="flex-1 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition-all flex items-center justify-center gap-2"
-            style={{ background: "linear-gradient(135deg,#06b6d4,#2563eb)" }}>
+            style={{ background: processing ? "rgba(6,182,212,0.3)" : "linear-gradient(135deg,#06b6d4,#2563eb)" }}>
             {processing ? (
-              <><span className="animate-spin inline-block">⟳</span> Analizando imagen con IA…</>
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Cargando… Procesando horario con IA
+              </>
             ) : (
-              <><span>🤖</span> Extraer horario con IA (Qwen2-VL)</>
+              <><span>🤖</span> Extraer horario con IA (Gemini)</>
             )}
           </button>
           <button onClick={() => setTurnos(getDefaultTurnos())}

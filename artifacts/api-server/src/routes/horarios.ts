@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, horarioVersionesTable, turnosTable, usersTable } from "@workspace/db";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { respondError, Errors } from "../lib/errors.js";
 import multer from "multer";
@@ -20,7 +20,7 @@ const turnoSchema = z.object({
   seccion:         z.string().nullable().optional(),
   hora_inicio:     z.string().nullable().optional(),
   hora_fin:        z.string().nullable().optional(),
-  estado:          z.enum(["trabaja", "libre", "modificado"]).default("trabaja"),
+  estado:          z.enum(["trabaja", "libre", "modificado", "vacaciones"]).default("trabaja"),
   turno_tipo:      z.string().nullable().optional(),
   notas:           z.string().nullable().optional(),
 });
@@ -39,9 +39,9 @@ router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), 
     return;
   }
 
-  const apiKey = process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: "GOOGLE_API_KEY no configurada" });
+    res.status(500).json({ error: "GEMINI_API_KEY no configurada" });
     return;
   }
 
@@ -52,25 +52,17 @@ router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const PROMPT = `Analiza esta imagen de un cuadrante de horarios de hostelería. Extrae los turnos de cada empleado y devuélveme ÚNICAMENTE un array JSON válido, sin bloques de código markdown, sin texto extra, solo el JSON limpio con este formato exacto:
-[
-  {
-    "empleado": "Nombre",
-    "dia": "lunes",
-    "inicio": "08:00",
-    "fin": "16:00",
-    "estado": "trabaja",
-    "seccion": "sala"
-  }
-]
-Reglas:
+    const PROMPT = `Analiza este cuadrante de horarios de hostelería. Devuélveme ÚNICAMENTE un array JSON válido. Cero texto extra.
+REGLAS:
+- Nombres duplicados: NO fusiones empleados que se llamen igual si están en columnas/secciones distintas. Crea objetos separados diferenciados por su 'seccion'.
+- Celdas con "X" o "Cruz": Significa ausencia. Setea "estado": "vacaciones", "inicio": "", "fin": "".
+- Celdas con "LIBRE": Setea "estado": "libre", "inicio": "", "fin": "".
+- Celdas con Horario: Setea "estado": "trabaja" y extrae las horas (HH:MM).
 - "dia" debe ser uno de: lunes, martes, miércoles, jueves, viernes, sábado, domingo
-- "estado" debe ser "trabaja" o "libre"
-- Si la celda dice LIBRE o L, pon estado "libre" y deja inicio/fin como ""
-- Si hay horario tipo 08:00-16:00 o 08:00/16:00, pon estado "trabaja"
 - Cruza cuidadosamente cada fila (día) con cada columna (empleado)
 - Solo incluye filas con información real, no filas vacías
-- Devuelve SOLO el JSON, sin ningún texto adicional`;
+FORMATO ESTRICTO:
+[{"empleado": "Nombre", "dia": "lunes", "inicio": "HH:MM", "fin": "HH:MM", "estado": "trabaja/libre/vacaciones", "seccion": "sala mañana/cocina/etc"}]`;
 
     const result = await model.generateContent([
       { inlineData: { mimeType, data: base64 } },
@@ -80,22 +72,37 @@ Reglas:
     const rawText = result.response.text() ?? "";
     logger.info({ rawLength: rawText.length }, "Respuesta recibida de Gemini");
 
-    // Extraer JSON limpio (por si el modelo añade algo extra)
-    const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+    // Strip markdown code blocks if present, then extract JSON array
+    const cleaned = rawText.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+    const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       logger.warn({ rawText }, "No se encontró JSON en la respuesta");
       res.status(422).json({ error: "El modelo no devolvió JSON válido", raw: rawText });
       return;
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    let parsed: Array<Record<string, string>>;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch {
+      logger.warn({ raw: jsonMatch[0] }, "JSON inválido tras limpieza");
+      res.status(422).json({ error: "La respuesta del modelo no es JSON válido", raw: rawText });
+      return;
+    }
 
-    const turnos = (parsed as Array<Record<string, string>>).map(t => ({
+    const estadoValido = (s: string): "trabaja" | "libre" | "vacaciones" => {
+      const lower = s.toLowerCase().trim();
+      if (lower === "libre") return "libre";
+      if (lower === "vacaciones" || lower === "x" || lower === "ausencia") return "vacaciones";
+      return "trabaja";
+    };
+
+    const turnos = parsed.map(t => ({
       empleado_nombre: (t.empleado ?? t.empleado_nombre ?? "").toString().trim(),
       dia:             (t.dia ?? "").toString().toLowerCase().trim(),
       hora_inicio:     (t.inicio ?? t.hora_inicio ?? "").toString().trim() || null,
       hora_fin:        (t.fin ?? t.hora_fin ?? "").toString().trim() || null,
-      estado:          (t.estado ?? "trabaja").toString().toLowerCase() === "libre" ? "libre" : "trabaja",
+      estado:          estadoValido(t.estado ?? ""),
       seccion:         (t.seccion ?? "").toString().trim() || null,
       notas:           null,
     }));
@@ -247,7 +254,7 @@ router.post("/horarios/versiones", requireAdmin, async (req, res) => {
     }
 
     if (cambios.length > 0) {
-      void enviarSmsAEmpleados(cambios, semana_inicio);
+      logger.info({ cambios }, "Cambios detectados en horario — notificación WhatsApp disponible desde el panel admin");
     }
 
     res.status(201).json({ ...newVersion, cambios });
@@ -269,45 +276,5 @@ router.delete("/horarios/versiones/:id", requireAdmin, async (req, res) => {
     respondError(res, Errors.DB_ERROR("versión", "eliminar"));
   }
 });
-
-/* ── SMS helper (Twilio, optional) ── */
-async function enviarSmsAEmpleados(cambios: string[], semana: string) {
-  const sid   = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const from  = process.env.TWILIO_FROM_NUMBER;
-
-  if (!sid || !token || !from) {
-    logger.info({ cambios }, "SMS omitido: credenciales Twilio no configuradas");
-    return;
-  }
-
-  try {
-    const { default: twilio } = await import("twilio");
-    const client = twilio(sid, token);
-
-    const nombres = [...new Set(cambios.map(c => c.split(" ")[0]))];
-
-    const empleados = await db
-      .select({ nombre: usersTable.nombre, telefono: usersTable.telefono })
-      .from(usersTable)
-      .where(inArray(usersTable.nombre, nombres));
-
-    for (const emp of empleados) {
-      if (!emp.telefono) continue;
-      try {
-        await client.messages.create({
-          body: `Hola ${emp.nombre}, tu horario de la semana del ${semana} ha sido modificado. Revisa la app.`,
-          from,
-          to: emp.telefono,
-        });
-        logger.info({ nombre: emp.nombre }, "SMS enviado");
-      } catch (e) {
-        logger.warn({ nombre: emp.nombre, err: e }, "Error enviando SMS");
-      }
-    }
-  } catch (e) {
-    logger.warn({ err: e }, "Error inicializando Twilio");
-  }
-}
 
 export default router;
