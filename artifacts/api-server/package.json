@@ -32,9 +32,6 @@
     "xlsx": "^0.18.5",
     "zod": "catalog:"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": ["sharp", "tesseract.js"]
-  },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
     "@types/cookie-parser": "^1.4.10",

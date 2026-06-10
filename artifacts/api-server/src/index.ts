@@ -16,6 +16,6 @@ initWebSocket(server);
 
 await seedDefaultUsers();
 
-server.listen(port, () => {
+server.listen(port, "0.0.0.0", () => {
   logger.info({ port }, "Server listening");
 });
