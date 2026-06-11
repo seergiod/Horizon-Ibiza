@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { createReservation, confirmReservation, reservationSchema } from "@/lib/reservations";
 import { RESERVE_DEFAULTS } from "@/content/site";
 import { track } from "@/lib/track";
-import { buildWhatsAppUrl, reservationMessage } from "@/lib/whatsapp";
 import type { Locale } from "@/i18n";
 
 function todayPlus(days = 0) {
@@ -79,17 +78,7 @@ export function useReserveForm() {
       const { id, token } = await createReservation(parsed.data);
       track("reservation_submitted", { partySize, locale, time });
 
-      const when = reservationAt.toLocaleString(locale, {
-        weekday: "short", day: "numeric", month: "short",
-        hour: "2-digit", minute: "2-digit",
-      });
-      const waUrl = buildWhatsAppUrl(
-        reservationMessage({ locale, name, partySize, when, notes: notes || undefined }),
-        locale,
-      );
-      sessionStorage.setItem("horizon-wa-url", waUrl);
-
-      setPendingVerify({ id, token, waUrl });
+      setPendingVerify({ id, token, waUrl: "" });
       setConfirmPhone("");
       setConfirmError(null);
     } catch (err) {
