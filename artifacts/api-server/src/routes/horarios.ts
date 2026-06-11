@@ -7,7 +7,6 @@ import multer from "multer";
 import { z } from "zod";
 import { logger } from "../lib/logger.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import sharp from "sharp";
 
 const router = Router();
 router.use(requireAuth);
@@ -65,30 +64,14 @@ const guardarVersionSchema = z.object({
 });
 
 /* ── Helper: process image with Gemini (runs in background) ── */
-async function processImageJob(jobId: string, rawBuffer: Buffer, apiKey: string) {
+async function processImageJob(jobId: string, rawBuffer: Buffer, apiKey: string, mimeType: string) {
   const job = jobStore.get(jobId);
   if (!job) return;
 
   job.status = "processing";
-  job.message = "Optimizando imagen…";
-
-  // ── 1. Optimise image: resize, grayscale, sharpen, WebP 85% ──
-  let processedBuffer: Buffer;
-  try {
-    processedBuffer = await sharp(rawBuffer)
-      .resize({ width: 2500, withoutEnlargement: true })
-      .grayscale()
-      .sharpen()
-      .webp({ quality: 85 })
-      .toBuffer();
-  } catch (sharpErr) {
-    logger.warn({ jobId, sharpErr }, "sharp falló, usando imagen original");
-    processedBuffer = rawBuffer;
-  }
-
   job.message = "Analizando imagen con IA…";
 
-  const base64 = processedBuffer.toString("base64");
+  const base64 = rawBuffer.toString("base64");
 
   const PROMPT = `Analiza este cuadrante de horarios de hostelería. Devuelve ÚNICAMENTE un array JSON válido sin bloques markdown.
 
@@ -109,7 +92,7 @@ FORMATO JSON:
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const geminiCall = model.generateContent([
-      { inlineData: { mimeType: "image/webp", data: base64 } },
+      { inlineData: { mimeType: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: base64 } },
       { text: PROMPT },
     ]);
 
@@ -175,9 +158,9 @@ router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), 
     return;
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: "GEMINI_API_KEY no configurada" });
+    res.status(500).json({ error: "GOOGLE_API_KEY no configurada" });
     return;
   }
 
@@ -190,7 +173,7 @@ router.post("/horarios/procesar-imagen", requireAdmin, upload.single("imagen"), 
   });
 
   // Fire and forget — client polls for result
-  processImageJob(jobId, req.file.buffer, apiKey);
+  processImageJob(jobId, req.file.buffer, apiKey, req.file.mimetype || "image/jpeg");
 
   res.json({ jobId });
 });

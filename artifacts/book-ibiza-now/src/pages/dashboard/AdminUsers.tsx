@@ -45,7 +45,7 @@ function UserModal({ user, onClose, onSaved }: {
   onSaved: () => void;
 }) {
   const isEdit = !!user?.id;
-  const [form, setForm] = useState<typeof EMPTY>({ ...EMPTY, ...(user ?? {}) });
+  const [form, setForm] = useState<typeof EMPTY>({ ...EMPTY, ...(user ? { ...user, dni: user.dni ?? "", telefono: user.telefono ?? "", password: "" } : {}) });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");

@@ -175,7 +175,7 @@ export interface TurnoInput {
   dia: string;
   hora_inicio: string | null;
   hora_fin: string | null;
-  estado: "trabaja" | "libre" | "modificado";
+  estado: "trabaja" | "libre" | "modificado" | "vacaciones";
   seccion: string | null;
   notas: string | null;
 }
