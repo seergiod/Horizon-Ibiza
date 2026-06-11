@@ -11,10 +11,10 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
+router.use(auditRouter);
 router.use(reservasRouter);
 router.use(whatsappRouter);
 router.use(usersRouter);
 router.use(horariosRouter);
-router.use(auditRouter);
 
 export default router;

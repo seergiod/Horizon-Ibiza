@@ -9,7 +9,7 @@ import { logger } from "../lib/logger.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const router = Router();
-router.use(requireAuth);
+router.use(["/horarios", "/horarios/*path"], requireAuth);
 
 /* ── In-memory background job store ── */
 type JobStatus = "pending" | "processing" | "done" | "error";

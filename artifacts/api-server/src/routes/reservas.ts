@@ -71,7 +71,10 @@ router.post(
   },
 );
 
-router.use(requireAuth);
+router.use("/reservas", (req, res, next) => {
+  if (req.path === "/public" || req.path === "/confirm") return next("router");
+  requireAuth(req, res, next);
+});
 
 /* ── GET /api/reservas/calendar?month=MM&year=YYYY ── */
 router.get("/reservas/calendar", async (req, res) => {

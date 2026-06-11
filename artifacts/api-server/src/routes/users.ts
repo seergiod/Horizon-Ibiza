@@ -12,7 +12,7 @@ import { z } from "zod";
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-router.use(requireAuth);
+router.use(["/users", "/users/*path", "/import/users"], requireAuth);
 
 const phoneRegex = /^\+?[\d\s\-().]{6,25}$/;
 

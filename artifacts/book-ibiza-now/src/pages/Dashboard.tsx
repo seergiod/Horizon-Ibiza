@@ -220,6 +220,12 @@ export function Dashboard() {
 
   function handleLogout() { clearAuth(); setAuthed(false); setRole(""); wsRef.current?.close(); }
 
+  useEffect(() => {
+    function onUnauthorized() { handleLogout(); }
+    window.addEventListener("hz:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("hz:unauthorized", onUnauthorized);
+  }, []);
+
   if (!authed) {
     return <LoginScreen onLogin={(t, r) => { setRole(r); setAuthed(true); }} />;
   }

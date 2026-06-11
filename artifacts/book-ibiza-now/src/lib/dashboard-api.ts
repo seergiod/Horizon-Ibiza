@@ -69,6 +69,10 @@ function headers(extra?: Record<string, string>) {
 async function handle<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      clearAuth();
+      window.dispatchEvent(new Event("hz:unauthorized"));
+    }
     throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`);
   }
   return res.json() as Promise<T>;
