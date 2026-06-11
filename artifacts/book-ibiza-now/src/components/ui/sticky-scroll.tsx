@@ -89,13 +89,6 @@ const StickyScrollGallery = forwardRef<HTMLElement, StickyScrollGalleryProps>(
               </div>
             </div>
           </section>
-
-          <footer className='group' style={{ background: "#0a1628" }}>
-            <h2 className='text-[12vw] translate-y-16 leading-none uppercase font-semibold text-center bg-gradient-to-r from-blue-400/60 to-blue-800/40 bg-clip-text text-transparent py-4'>
-              Horizon Ibiza
-            </h2>
-            <div className='h-32 relative z-10 rounded-tr-3xl rounded-tl-3xl' style={{ background: "oklch(1 0 0)" }} />
-          </footer>
         </main>
       </ReactLenis>
     );
