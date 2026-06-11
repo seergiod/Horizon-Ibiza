@@ -1,0 +1,72 @@
+Quiero mejorar la aplicación de gestión de reservas y horarios. Implementa los siguientes cambios respetando la arquitectura existente y manteniendo compatibilidad con los datos actuales.
+
+1. Gestión de horarios por empleado
+Cada horario debe estar asociado a un usuario concreto mediante su identificador único (userId).
+El sistema NO debe asignar horarios automáticamente basándose únicamente en nombres.
+Si al procesar una imagen o importar horarios aparecen dos o más empleados con el mismo nombre, mostrar un aviso al administrador indicando que existen coincidencias.
+En esos casos, el administrador deberá seleccionar manualmente a qué empleado corresponde cada horario.
+Nunca realizar asignaciones automáticas cuando exista ambigüedad.
+Añadir una interfaz sencilla para resolver conflictos de nombres duplicados.
+2. Sistema Kanban para reservas
+
+Implementar un sistema visual de gestión de reservas mediante columnas:
+
+Pendientes
+Confirmadas
+Canceladas (opcional)
+
+Las reservas deben poder cambiar de estado mediante drag & drop.
+
+Ejemplo:
+
+Arrastrar una reserva desde "Pendientes" a "Confirmadas".
+Actualizar automáticamente el estado en la base de datos.
+Refrescar la interfaz en tiempo real sin necesidad de recargar la página.
+Mostrar una animación suave al mover tarjetas.
+3. Mejorar la vista del calendario
+
+Cuando el usuario pulse sobre un día del calendario:
+
+Mostrar todas las reservas de ese día.
+Cada reserva debe aparecer dentro de una tarjeta desplegable (accordion).
+
+Información visible inicialmente:
+
+Nombre del cliente.
+Hora de la reserva.
+
+Al desplegar la tarjeta mostrar:
+
+Número de teléfono.
+Descripción completa.
+Número de personas.
+Estado de la reserva.
+Notas adicionales.
+Fecha y hora de creación.
+4. Experiencia de usuario
+Diseño moderno y profesional.
+Animaciones suaves.
+Adaptado a móvil y escritorio.
+Carga rápida incluso con muchas reservas.
+Mantener la identidad visual azul de la aplicación.
+5. Validaciones
+Evitar reservas duplicadas.
+Validar teléfonos.
+Validar fechas y horas.
+Mostrar mensajes claros de error y éxito.
+6. Notificaciones
+
+Cuando una reserva cambie de estado:
+
+Registrar quién realizó el cambio.
+Registrar fecha y hora.
+Mostrar una notificación visual al usuario.
+Preparar la estructura para futuras notificaciones por SMS o WhatsApp.
+7. Calidad del código
+Componentes reutilizables.
+Código tipado con TypeScript.
+Separación clara entre frontend, backend y lógica de negocio.
+Evitar código duplicado.
+Añadir comentarios únicamente donde aporten valor.
+
+Implementa todo siguiendo buenas prácticas de React, TypeScript, Tailwind y PostgreSQL. Si alguna parte de la arquitectura actual impide realizar estos cambios, refactorízala de forma segura sin romper

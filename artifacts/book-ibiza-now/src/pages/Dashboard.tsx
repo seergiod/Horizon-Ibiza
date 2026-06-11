@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Routes, Route, NavLink, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { Toaster } from "sonner";
 import { login, setToken, getToken, clearAuth } from "@/lib/dashboard-api";
 import { ReservasList } from "./dashboard/ReservasList";
 import { CalendarView } from "./dashboard/CalendarView";
+import { KanbanView } from "./dashboard/KanbanView";
 import { AdminUsers } from "./dashboard/AdminUsers";
 import { AdminImport } from "./dashboard/AdminImport";
 import { HorarioUpload } from "./dashboard/HorarioUpload";
@@ -58,6 +60,7 @@ function LoginScreen({ onLogin }: { onLogin: (token: string, role: string) => vo
 /* ── Sidebar ── */
 const NAV_ITEMS_MAIN = [
   { path: "/dashboard/reservas", icon: "📋", label: "Reservas" },
+  { path: "/dashboard/kanban",   icon: "🗂️", label: "Kanban" },
   { path: "/dashboard/calendar", icon: "📅", label: "Calendario" },
   { path: "/dashboard/horarios", icon: "🗓️", label: "Mi Horario" },
 ];
@@ -128,17 +131,19 @@ function DashboardLayout({ role, onLogout, wsStatus }: { role: string; onLogout:
   const { pathname } = useLocation();
 
   const pageTitle: Record<string, string> = {
-    "/dashboard/reservas":          "Reservas",
-    "/dashboard/calendar":          "Calendario",
-    "/dashboard/horarios":          "Mi Horario",
-    "/dashboard/admin/horarios":    "Subir Horario",
-    "/dashboard/admin/users":       "Gestión de usuarios",
-    "/dashboard/admin/import":      "Importar usuarios",
+    "/dashboard/reservas":           "Reservas",
+    "/dashboard/kanban":             "Kanban",
+    "/dashboard/calendar":           "Calendario",
+    "/dashboard/horarios":           "Mi Horario",
+    "/dashboard/admin/horarios":     "Subir Horario",
+    "/dashboard/admin/users":        "Gestión de usuarios",
+    "/dashboard/admin/import":       "Importar usuarios",
     "/dashboard/admin/estadisticas": "Estadísticas",
   };
 
   return (
     <div className="flex min-h-screen" style={{ background: "#080f1e", color: "#e2e8f0" }}>
+      <Toaster theme="dark" position="top-right" richColors closeButton />
       <Sidebar role={role} onLogout={onLogout} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -156,6 +161,7 @@ function DashboardLayout({ role, onLogout, wsStatus }: { role: string; onLogout:
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
           <Routes>
             <Route path="reservas"       element={<ReservasList />} />
+            <Route path="kanban"         element={<KanbanView />} />
             <Route path="calendar"       element={<CalendarView />} />
             <Route path="horarios"       element={<HorarioView role={role} />} />
             {role === "admin" && <>
@@ -198,7 +204,13 @@ export function Dashboard() {
       const ws    = new WebSocket(url);
       wsRef.current = ws;
       setWsStatus("connecting");
-      ws.onopen  = () => setWsStatus("connected");
+      ws.onopen    = () => setWsStatus("connected");
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          window.dispatchEvent(new CustomEvent("ws-message", { detail: msg }));
+        } catch { /* ignore malformed */ }
+      };
       ws.onclose = () => { setWsStatus("disconnected"); retryRef.current = setTimeout(connect, 5000); };
       ws.onerror = () => ws.close();
     }
