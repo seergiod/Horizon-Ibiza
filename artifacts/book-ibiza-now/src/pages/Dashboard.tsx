@@ -7,7 +7,7 @@ import { AdminUsers } from "./dashboard/AdminUsers";
 import { AdminImport } from "./dashboard/AdminImport";
 import { HorarioUpload } from "./dashboard/HorarioUpload";
 import { HorarioView } from "./dashboard/HorarioView";
-import { AuditPanel } from "./dashboard/AuditPanel";
+import { StatsPanel } from "./dashboard/StatsPanel";
 
 /* ── Login Screen ── */
 function LoginScreen({ onLogin }: { onLogin: (token: string, role: string) => void }) {
@@ -66,7 +66,7 @@ const NAV_ITEMS_ADMIN = [
   { path: "/dashboard/admin/horarios", icon: "📤", label: "Subir Horario" },
   { path: "/dashboard/admin/users",    icon: "👥", label: "Usuarios" },
   { path: "/dashboard/admin/import",   icon: "📥", label: "Importar" },
-  { path: "/dashboard/admin/auditoria", icon: "📊", label: "Auditoría" },
+  { path: "/dashboard/admin/estadisticas", icon: "📊", label: "Estadísticas" },
 ];
 
 function Sidebar({ role, onLogout, mobileOpen, onClose }: {
@@ -134,7 +134,7 @@ function DashboardLayout({ role, onLogout, wsStatus }: { role: string; onLogout:
     "/dashboard/admin/horarios":    "Subir Horario",
     "/dashboard/admin/users":       "Gestión de usuarios",
     "/dashboard/admin/import":      "Importar usuarios",
-    "/dashboard/admin/auditoria":   "Panel de Auditoría",
+    "/dashboard/admin/estadisticas": "Estadísticas",
   };
 
   return (
@@ -162,7 +162,7 @@ function DashboardLayout({ role, onLogout, wsStatus }: { role: string; onLogout:
               <Route path="admin/horarios"   element={<HorarioUpload />} />
               <Route path="admin/users"      element={<AdminUsers />} />
               <Route path="admin/import"     element={<AdminImport />} />
-              <Route path="admin/auditoria"  element={<AuditPanel />} />
+              <Route path="admin/estadisticas" element={<StatsPanel />} />
             </>}
             <Route path="*" element={<Navigate to="/dashboard/reservas" replace />} />
           </Routes>
