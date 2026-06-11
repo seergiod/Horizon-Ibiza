@@ -33,47 +33,49 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-display: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", "Work Sans", ui-serif, serif;
   --font-sans:    "Work Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
   --radius: 0.75rem;
 
-  /* ── White & Blue – Clean Professional Light Theme ── */
-  --background:             oklch(1 0 0);                    /* #FFFFFF */
-  --foreground:             oklch(0.13 0.025 258);           /* #0F172A */
-  --card:                   oklch(0.975 0.008 250);          /* #F8FAFF */
-  --card-foreground:        oklch(0.13 0.025 258);
+  /* ── Horizon Ibiza — Deep Cerulean Brand Blue ── */
+  --background:             oklch(1 0 0);
+  --foreground:             oklch(0.12 0.022 250);
+
+  --card:                   oklch(0.978 0.006 245);
+  --card-foreground:        oklch(0.12 0.022 250);
   --popover:                oklch(1 0 0);
-  --popover-foreground:     oklch(0.13 0.025 258);
+  --popover-foreground:     oklch(0.12 0.022 250);
 
-  --primary:                oklch(0.52 0.24 263);            /* #2563EB */
+  /* Primary: deep steel-cerulean matching the Horizon Ibiza logo */
+  --primary:                oklch(0.46 0.16 243);
   --primary-foreground:     oklch(1 0 0);
-  --primary-glow:           oklch(0.63 0.22 263);            /* #3B82F6 */
+  --primary-glow:           oklch(0.58 0.16 243);
 
-  --secondary:              oklch(0.95 0.012 253);           /* #EEF2FF */
-  --secondary-foreground:   oklch(0.35 0.12 263);
-  --muted:                  oklch(0.96 0.008 250);
-  --muted-foreground:       oklch(0.48 0.05 252);            /* #64748B */
-  --accent:                 oklch(0.65 0.19 263);            /* #3B82F6 */
+  --secondary:              oklch(0.955 0.015 240);
+  --secondary-foreground:   oklch(0.34 0.10 243);
+  --muted:                  oklch(0.962 0.008 245);
+  --muted-foreground:       oklch(0.48 0.046 248);
+  --accent:                 oklch(0.60 0.17 243);
   --accent-foreground:      oklch(1 0 0);
 
-  --sea:                    oklch(0.52 0.24 263);
-  --sand:                   oklch(0.95 0.012 253);
-  --sunset:                 oklch(0.52 0.24 263);
+  --sea:                    oklch(0.46 0.16 243);
+  --sand:                   oklch(0.955 0.015 240);
+  --sunset:                 oklch(0.46 0.16 243);
 
   --destructive:            oklch(0.55 0.22 27);
   --destructive-foreground: oklch(1 0 0);
 
-  --border:                 oklch(0.88 0.02 253);            /* #DBEAFE tint */
-  --input:                  oklch(0.90 0.018 252);
-  --ring:                   oklch(0.52 0.24 263);
+  --border:                 oklch(0.89 0.018 248);
+  --input:                  oklch(0.91 0.014 247);
+  --ring:                   oklch(0.46 0.16 243);
 
-  --gradient-sunset: linear-gradient(135deg, oklch(0.52 0.24 263), oklch(0.45 0.23 270));
-  --gradient-sky:    linear-gradient(160deg, oklch(0.52 0.24 263) 0%, oklch(0.40 0.20 268) 100%);
-  --shadow-cta:      0 8px 24px -6px oklch(0.52 0.24 263 / 0.40);
-  --shadow-card:     0 1px 3px 0 oklch(0.52 0.24 263 / 0.08), 0 0 0 1px oklch(0.52 0.24 263 / 0.07);
+  --gradient-sunset: linear-gradient(135deg, oklch(0.46 0.16 243), oklch(0.38 0.14 248));
+  --gradient-sky:    linear-gradient(160deg, oklch(0.46 0.16 243) 0%, oklch(0.36 0.13 250) 100%);
+  --shadow-cta:      0 8px 24px -6px oklch(0.46 0.16 243 / 0.45);
+  --shadow-card:     0 1px 3px 0 oklch(0.46 0.16 243 / 0.08), 0 0 0 1px oklch(0.46 0.16 243 / 0.07);
 }
 
 @layer base {
@@ -91,9 +93,9 @@
     overflow-x: hidden;
   }
   h1, h2, h3, .font-display {
-    font-family: var(--font-sans);
+    font-family: var(--font-display);
     font-weight: 700;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
     line-height: 1.08;
   }
 }
@@ -106,10 +108,9 @@ main {
   padding-top: 3.5rem;
 }
 
-/* ── Date/time picker tint ── */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.3) sepia(1) saturate(4) hue-rotate(195deg);
+  filter: invert(0.3) sepia(1) saturate(3.5) hue-rotate(200deg);
   opacity: 0.7;
   cursor: pointer;
 }
