@@ -1,0 +1,241 @@
+Actúa como un desarrollador Frontend experto. Quiero que actualices/implementes la sección de "Menú" (Carta) de mi sitio web utilizando un diseño moderno, elegante, totalmente responsive y limpio (apropiado para un beach restaurant/lounge en Ibiza).
+
+### REQUISITOS DE DISEÑO Y FUNCIONALIDAD:
+1. Interfaz de Pestañas (Tabs): Crea un sistema de navegación por pestañas en la parte superior para cambiar entre las 4 categorías principales: "Desayunos (Opening - 12:30)", "Piscina (12:30 - 19:00)", "Restaurante (12:30 - Cierre)" y "Bebidas y Cócteles".
+2. Estructura de los Platos: Cada ítem de la carta debe mostrarse en un componente limpio (tipo lista elegante o tarjeta minimalista) que incluya:
+   - Nombre en Español / Nombre en Inglés (claramente diferenciados o con diseño bilingüe fluido).
+   - Descripción en Español / Descripción en Inglés (en una fuente más pequeña/sutil).
+   - Precio formateado de manera elegante (ej. "6,20 €" o "€6.20").
+3. Subcategorías: Dentro de cada pestaña principal, organiza el contenido respetando los subtítulos (por ejemplo, en Desayunos: Combos, Saludables, Huevos, Tostadas, Bollería, Bocadillos, Zumos, Cafés).
+4. Etiquetas Especiales: Si un plato dice "CHEF SUGGESTION" o "TRAVELLER'S CHOICE", añádele una pequeña insignia o badge visual sutil que lo resalte.
+5. Regla de Oro de Datos: NO resumas, NO omitas ningún plato y NO uses comentarios del tipo "". Debes picar e incluir absolutamente TODOS los productos que te proporciono a continuación con sus respectivos precios y descripciones.
+
+Aquí tienes los datos exactos de la carta que debes volcar en el código:
+
+=========================================
+1. DESAYUNOS (OPENING – 12:30 HS)
+=========================================
+[COMBOS]
+- COMBO 1 MAR: Media tostada con tomate rayado o croissant, café o te y zumo natural de naranja 20cl. / half a toast with scratched tomato or croissant, coffee or tea and fresh orange juice 20cl. -> €6.20
+- COMBO 2 PLAYA: Media tostada con aguacate, queso fresco, tomate rayado, café o té y zumo natural de naranja 20cl. / half toast with avocado, fresh cheese, shredded tomato, coffee or tea and fresh orange juice 20cl. -> €8.20
+- COMBO 3 SOL: Huevos revueltos con beicon y tostada de pan de molde, café o te y zumo natural de naranja 20cl. / scrambled eggs with bacon and sliced bread toast, coffee or tea and natural orange juice 20cl. -> €11.50
+
+[DESAYUNOS SALUDABLES / HEALTHY BREAKFAST]
+- AÇAI BOWL SUNSHINE: Açai con yogurt de soja, frutos del bosque, platano, kiwi, muesli y miel / açai with soy yogurt, berries, banana, kiwi, muesli and honey -> €8.20
+- SMOOTHIE MIX: Smoothie de platano, naranja y fresa / banana, orange and strawberry smoothie -> €5.40
+- SUMMER MUESLI: Yogurt, muesli con mango y fresa / yogurt, muesli with mango and strawberry -> €5.40
+- FRUTY MIX: Plato de fruta / fruit plate -> €10.50
+
+[HUEVOS / EGGS]
+- DESAYUNO INGLES (FULL ENGLISH BREAKFAST): Huevos con beicon, salchichas y judías con tomate / eggs with bacon, sausage and beans with tomato -> €9.90
+- HUEVOS FRITOS (FRIED EGGS): Huevos fritos con tostadas de pan de molde / fried eggs with sliced bread toast -> €6.90
+- A LA FRANCESA (FRENCH STYLE): Huevos a la francesa con tostadas de pan de molde / french eggs with sliced bread toast -> €6.90
+- HUEVOS REVUELTOS (SCRAMBLED EGGS): Huevos revueltos con tostadas de pan de molde / scrambled eggs with sliced bread toast -> €6.90
+- EXTRAS: BACON/BEICON (€1.00), HAM/JAMÓN YORK (€1.00), CHESSE/QUESO (€1.00)
+
+[TOSTADAS / TOASTS] (Tipos de pan: Traditional Bread / Seed Bread)
+- MANTEQUILLA Y MERMELADA (BUTTER AND JAM): Media tostada con mantequilla y mermelada / half toast with butter and jam -> €3.50
+- TOMATE (TOMATO): Media tostada con tomate restregado / half toast with scrubbed tomato -> €3.00
+- QUESO (CHEESE): Media tostada con tomate restregado y queso fundido / half toast with scrubbed tomato and melted cheese -> €3.40
+- JAMÓN YORK Y QUESO (HAM AND CHEESE): Media tostada con tomate restregado, jamón york y queso / half toast with scrubbed tomato, ham and cheese -> €4.00
+- JAMÓN SERRANO (SERRANO HAM): Media tostada con tomate restregado y jamón serrano / half toast with scrubbed tomato and serrano ham -> €4.50
+- SERRANO Y MANCHEGO (SERRANO HAM AND MANCHEGO CHEESE): Media tostada con tomate restregado, jamón serrano y queso manchego / half toast with scrubbed tomato, serrano ham and manchego cheese -> €5.60
+- AGUACATE Y QUESO FRESCO (AVOCADO AND FRESH CHEESE): Media tostada con tomate restregado, aguacate y queso fresco / half toast with scrubbed tomato, avocado and fresh cheese -> €6.00
+- SALMÓN (SALMON): Media tostada con tomate restregado y salmón / half toast with scrubbed tomato and salmon -> €6.70
+- SALMÓN Y AGUACATE (SALMON AND AVOCADO): Media tostada con tomate restregado, salmón y aguacate / half toast with scrubbed tomato, salmon and avocado -> €7.80
+
+[BOLLERÍA / PASTRY]
+- CROISSANT CLÁSICA (CLASSIC CROISSANT) -> €2.50
+- CROISSANT NUTELLA -> €3.00
+- MANTEQUILLA Y MERMELADA (BUTTER AND JAM): Croissant con mantequilla y mermelada / croissant with butter and jam -> €3.00
+- JAMÓN Y QUESO (HAM AND CHEESE): Croissant de jamón y queso / ham and cheese croissant -> €3.50
+- MUFFIN YOGURT AND FOREST FRUITS: Muffin con yogurt y frutos del bosque / muffin with yogurt and berries -> €3.00
+- MUFFIN CHOCOLATE -> €3.00
+
+[BOCADILLOS / SANDWICH & BOCATAS] (Pan tradicional/Rústico o Semillas)
+- MIXTO (MIXED): Sandwich con jamón york y queso / sandwich with ham and cheese -> €5.00
+- BEICON Y QUESO (BACON AND CHEESE): Bocadillo con tomate restregado, beicon y queso / sandwich with scrubbed tomato, bacon and cheese -> €8.20
+- JAMÓN YORK Y QUESO (HAM AND CHEESE): Bocadillo con tomate restregado, jamón york y queso / sandwich with scrubbed tomato, ham and cheese -> €8.20
+- SERRANO Y MANCHEGO (SERRANO AND MANCHEGO): Bocadillo con tomate restregado, jamón serrano y queso manchego / sandwich with scrubbed tomato, serrano ham and manchego cheese -> €9.80
+- POLLO PRIMAVERA (SPRING CHICKEN): Bocadillo con tomate restregado, pollo, lechuga y un toque de mayonesa / sandwich with scrubbed tomato, chicken, lettuce and a touch of mayonnaise -> €10.20
+- ATÚN (TUNA): Bocadillo con tomate restregado, atún, cebolla, lechuga, olivas y pimiento del piquillo / sandwich with scrubbed tomato, tuna, onion, lettuce, olives and piquillo peppers -> €10.20
+- SALMÓN (SALMON): Bocadillo con tomate restregado, salmón ahumado, lechuga y cebolla tierna / sandwich with scrubbed tomato, smoked salmon, lettuce and light onions -> €11.40
+
+[ZUMOS NATURALES / NATURAL JUICES]
+- NARANJA (ORANGE): Zumo exprimido de naranja / squeezed orange juice -> €4.80
+- NARANJA Y ZANAHORIA (ORANGE AND CARROT): Zumo natural de naranja y zanahoria / natural orange and carrot juice -> €5.50
+- PIÑA (PINEAPPLE): Zumo natural de piña / natural pineapple juice -> €4.80
+- MANZANA (APPLE): Zumo natural de manzana / natural apple juice -> €4.80
+- ZUMO PERSONALIZADO (CUSTOM JUICE): 2 sabores a elegir (Naranja, Piña, Manzana) -> €5.50
+
+[CAFÉS E INFUSIONES / COFFEE AND INFUSIONS]
+- CAFÉ EXPRESSO -> €2.10 | CAFÉ AMERICANO -> €2.20 | DOBLE ESPRESSO -> €2.60 | CAFÉ CON LECHE -> €2.70 | LATTE MACCHIATO -> €3.00 | MATCHA -> €4.00 | CAFÉ IRLANDÉS (IRISH COFFEE) -> €8.20 | VASO DE LECHE -> €2.10 | CARAJILLO -> €3.20 | CAFÉ BOMBÓN -> €2.40 | CAPPUCCINO -> €3.00
+- TÉ (Negro / Verde) -> €2.50
+- OTRAS INFUSIONES (Poleo Menta / Manzanilla) -> €2.50
+
+
+=========================================
+2. PISCINA (12:30 – 19:00 HS)
+=========================================
+[RACIONES / APPETIZERS]
+- PATATAS FRITAS (FRENCH FRIES): Ración de patatas fritas caseras / portion of homemade french fries -> €6.50
+- PATATAS BRAVAS: Ración de patatas bravas con salsa brava (picante suave) / portion of patatas bravas with salsa brava (mild spicy) -> €8.00
+- ALITAS DE POLLO (BBQ CHICKEN WINGS): Alitas de pollo en salsa barbacoa y semillas de sésamo / chicken wings cover in barbecue sauce and sesame seeds -> €11.00
+- NACHOS CLÁSICOS (NACHOS WITH GUACAMOLE): Ración de nachos con queso fundido, jalapeños, guacamole y salsa mexicana / nachos served with melted cheese, jalapeños, guacamole and mexican sauce -> €11.20
+- WRAP DE POLLO (MEXICAN CHICKEN): Wrap de pollo, aguacate, lechuga, tomate, mayonesa de sriracha / chicken wrap, avocado, lettuce, tomato, sriracha mayonnaise -> €12.00
+- CROQUETAS DE JAMÓN (IBERIAN HAM CROQUETTES): Croquetas típicas de jamón ibérico / typical iberian ham croquettes -> €10.50
+- CHICKEN FINGERS: Pollo rebozado con salsa agridulce / battered chicken with sweet and sour sauce -> €12.50
+- PAN CON ALI OLI Y OLIVAS: Pan con ali oli ibicenco y olivas / bread with ibicencan ali oli and olives (2 pieces per person) -> €3.00
+
+[HAMBURGUESAS Y BOCADILLOS / BURGERS & SANDWICH] (100% Premium Veal - Rubia Gallega)
+- CLASSIC TASTY BURGER: Hamburguesa con lechuga, tomate y cebolla caramelizada acompañada con patatas fritas caseras / hamburger with lettuce, tomato and caramelized onion topped with homemade french fries -> €16.00
+- AMERICAN BURGER: Hamburguesa con baicon, huevo frito, pepinillos y queso cheddar acompañada con patatas fritas caseras / burger with baicon, fried egg, pickles and cheddar cheese served with homemade french fries -> €17.00
+- ROYAL CHESSE BURGER (*CHEF SUGGESTION*): Hamburguesa con lechuga, cebolla, doble cheddar, salsa especial, pepinillos, servida con patatas fritas caseras / burger with lettuce, onion, double cheddar, special sauce, pickles, served with homemade french fries -> €16.50
+- CLUB SANDWICH (*CHEF SUGGESTION*): Sandwich con pollo, baicon, lechuga, tomate, parmesano y huevo frito, servido con patatas fritas caseras / sandwich with chicken, bacon, lettuce, tomato, parmesan and fried egg, served with homemade french fries -> €16.50
+
+[MENÚ INFANTIL / KIDS MENU]
+- FINGERS CON PATATAS: Fingers de pollo con patatas fritas caseras / chicken fingers with homemade french fries -> €12.50
+- POLLO CON PATATAS: Pechuga de pollo con patatas fritas caseras / chicken breast with homemade french fries -> €12.50
+- ESPAGUETIS CON SALSA: Espaguetis con salsa de tomate y queso rallado / spaghetti with tomato sauce and shredded cheese -> €12.50
+
+[POSTRES / DESSERTS]
+- FLAÒ HORIZON (TRADITIONAL IBICENCAN CAKE): Tarta ibicenca de queso con toques de menta, servida con helado / ibicencan cheesecake with hints of mint, served with ice cream -> €8.50
+- TARTA DE QUESO (HOMEMADE CHEESECAKE): Tarta de queso con salsa de açai, crumble de almendra y helado de yogur maracuyá / cheesecake with açai sauce, almond crumble and passion fruit yoghurt ice cream -> €8.50
+- CHOCOLATE COULANT: Volcán de chocolate con helado de vainilla / chocolate volcano with vanilla ice cream -> €8.50
+- HELADO ARTESANAL (ITALIAN ARTISAN ICE CREAM): Surtido de helados artesanales / assortment of artisan ice cream -> €8.50
+- TIRAMISU: Postre clásico a base de café, cacao y queso mascarpone / classic dessert made with coffee, cocoa and mascarpone cheese -> €8.50
+- CAFÉ CALETA (OLD CLASSIC INFUSION): Infusión dulce de brandy, ron, café, canela, con piel de limón y naranja (Mínimo 2 personas, precio por persona) -> €5.00
+- HELADOS HÄAGEN-DAZS (100ml Mini Cup): Belgian Chocolate, Cookies & Cream, Dulce de Leche, Macadamia Nuts, Strawberry Cheesecake -> €4.80 cada uno.
+
+
+=========================================
+3. RESTAURANTE (12:30 HS – CLOSING)
+=========================================
+[ENSALADAS / SALADS]
+- HORIZON SALAD (*CHEF’S SELECTION*): Ensalada de aguacate, mango, fresas, lechuga variada, nueces, eneldo, con vinagreta de manzana y lima / salad with avocado, mango, strawberries, mixed lettuce, walnuts, dill, with apple and lime vinaigrette -> €16.00
+- CAESAR SALAD: Lechuga romana, cubos de pollo, lascas de parmesano y crutones servido con salsa caesar / romaine lettuce, chicken cubes, parmesan flakes and croutons served with caesar sauce -> €16.50
+- ENSALADA DE CROSTES (*OLD RECIPE FROM FORMENTERA*): Crostas de pan tostado, anchoa, tomate, tomate seco, cebolla, pimientos, ajo y aceitunas / toasted bread crostas, anchovy, tomato, sundried tomatoes, onion, peppers, garlic and olives -> €14.00
+- MEDITERRANEAN BURRATA: Burrata con pesto y carpaccio de tomate especial / burrata with pesto and a special tomato carpaccio -> €17.00
+- ENSALADA DE SALMÓN Y GAMBAS: Ensalada con salmón ahumado, gambas salteadas en ajo y perejil, lechuga variada, tomate, zanahoria, pepinillos encurtidos, cebolla morada y huevo duro -> €17.00
+
+[ENTRANTES DE LA TIERRA / STARTERS FROM THE EARTH]
+- CROQUETAS DE LA CASA (*CHEF HOMEMADE*): Ración variada de 6 croquetas caseras -> €12.00
+- FOIE MI CUIT (*ELABORATION BY THE CHEF*): Foie de pato casero, con pan crujiente, sal maldon, pimienta y mermelada de pera -> €18.00
+- HUEVOS ROTOS (*SPANISH SPECIALITY*): Con Sobrasada Ibicenca (€17.00) / Con Foie Mi Cuit (€18.00) / Con Jamón Ibérico (€18.00)
+- ALCACHOFAS RÚSTICAS (RUSTIC ARTICHOKES): Alcachofas a la plancha con escamas de parmesano y jamón ibérico con salsa romescu -> €17.50
+- QUESO MANCHEGO: Ración de queso semicurado de la mancha con pan con tomate -> €17.00
+- JAMÓN IBÉRICO (*SPECIAL SUGGESTION*): 100 gramos de jamón ibérico acompañado de pan con tomate -> €25.00
+
+[ENTRANTES DEL MAR / STARTERS FROM THE SEA]
+- MEJILLONES AL VAPOR (STEAMED MUSSELS): Con vino blanco, ajo y perejil -> €15.00
+- MEJILLONES A LA MARINERA (MUSSELS MARINERA STYLE): Con salsa tradicional -> €16.00
+- CALAMARES A LA ANDALUZA: Calamar nacional a la andaluza y salsa romesco -> €17.00
+- GAMBAS AL AJILLO (PRAWNS WITH GARLIC): Gambas peladas, salteadas con ajo, guindilla, pimentón y aceite de oliva -> €17.50
+- CALAMARES CON SOBRASADA (*IBICENCAN STYLE*): Calamar salteado con sobrasada y cebolla caramelizada -> €18.00
+- PULPO GRILLADO (*CHEF SUGGESTION*): Pulpo asado a la parrilla con patata estilo gallego -> €26.00
+
+[ARROCES Y PAELLAS / PAELLAS] (Precios por persona, mínimo 2 personas)
+- PAELLA CIEED/CIEGA (*TRAVELLER’S CHOICE*): Arroz y piezas peladas de gamba, sepia, mejillones y rape -> €26.00
+- PAELLA MIXTA: Arroz, gamba, cangrejo, sepia, mejillones, pollo y magro de cerdo -> €25.00
+- PAELLA DE PESCADO Y MARISCO: Arroz, gamba, cangrejo, sepia, mejillones y rape -> €28.00
+- PAELLA DE BOGAVANTE (*HORIZON SPECIALTY*): Arroz, bogavante, sepia y gambas -> €33.00
+- FIDEUÁ DEL SENYORET (*TRAVELLER’S CHOICE*): Fideos con piezas peladas de gamba, sepia, mejillones y rape -> €26.00
+- ARROZ A BANDA (*TRADITIONAL FROM IBIZA*): Arroz y sepia pelada en reducción de caldo de bullit de peix -> €24.00
+- ARROZ DE LA HUERTA: Selección de vegetales de temporada y caldo de verduras -> €24.00
+- ARROZ NEGRO: Arroz, sepia, gamba y tinta de calamar -> €25.00
+- PAELLA MAR Y CAMPO (*HORIZON SPECIALTY*): Piezas peladas de gamba, sepia, mejillones, pollo y magro de cerdo -> €26.00
+
+[ESPECIALIDAD IBICENCA / IBIZENCAN SPECIALITIES]
+- BULLIT DE PEIX (GUISO DE PESCADO CON ARROZ TÍPICO): Mínimo 2 personas. Precio por persona. Primer plato: Pescado de roca con patatas ibicencas y ali-oli. Segundo plato: Arroz del Bullit (Arroz a banda elaborado con la reducción del caldo) -> €43.00
+
+[PESCADOS Y MARISCOS / FISH AND SEAFOOD]
+- SARDINAS GRILLADAS (GRILLED SARDINES): A la parrilla con patata asada -> €19.50
+- CALAMARES GRILLADOS (GRILLED SQUID): A la plancha con patatas estilo ibicenco -> €24.00
+- FILETE DE LUBINA A LA PARRILLA (GRILLED SEABASS FILET): Con patatas ibicencas -> €27.00
+- BOGAVANTE ESTILO TRADICIONAL (*TRAVELLER’S CHOICE*): Medio bogavante con huevos fritos payeses y patatas fritas ibicencas -> €29.00
+
+[CARNES / MEATS] (Incluyen guarnición a elegir: ensalada, verduras asadas, patatas fritas o estilo ibicenco)
+- JARRETE DE CORDERO ASADO (ROASTED LAMB IN ITS JUICES) -> €29.00
+- ENTRAÑA DE TERNERA (SKIRT STEAK - SPECIAL GALICIAN BEEF) -> €23.50
+- SOLOMILLO DE TERNERA (BEEF TENDERLOIN *CHEF SUGGESTION*) -> €29.00
+- ENTRECÔTE DE TERNERA (RIB EYE STEAK *CHEF SUGGESTION*) -> €33.50
+- PECHUGA DE POLLO A LA PLANCHA (GRILLED CHICKEN BREAST) -> €17.70
+
+[PASTA & RISOTTOS]
+- ESPAGUETTIS CON GAMBAS (SPAGHETTI WITH PRAWNS) -> €19.00
+- MARCO POLO (Wok mixto de fideos udon con verduras y salsa de soja): Pollo (€17.00) / Gambas (€19.00) / Vegetal (€16.00)
+- RISOTTO HORIZON (*CHEF SUGGESTION*): Pollo con parmesano y setas silvestres -> €19.00
+
+[BURGER RESTAURANTE]
+- ROYAL CHESSE BURGER (*CHEF SUGGESTION*): Servida con patatas fritas caseras -> €18.00
+
+[POSTRES RESTAURANTE]
+- Mismos postres que sección piscina (Flaò €8.50, Tarta de queso €8.50, Coulant €8.50, Helado artesanal €8.50, Tiramisú casero €8.50, Café Caleta €5.00, Copas Häagen-Dazs €4.80).
+
+[COMPLEMENTOS / COMPLEMENTS]
+- PAN DE MASA MADRE -> €2.00 | PAN CON TOMATE -> €3.00 | PAN CON ALI OLI Y OLIVAS -> €3.00 | PATATAS FRITAS -> €6.50 | PATATAS BRAVAS -> €8.00
+
+[MENÚ INFANTIL RESTAURANTE]
+- Fingers con patatas (€13.00) | Pollo con patatas (€13.00) | Espaguetis con salsa de tomate (€13.00)
+
+
+=========================================
+4. BEBIDAS Y CÓCTELES / BAR MENU
+=========================================
+[VINOS BLANCOS / WHITE WINES]
+- ALBARIÑO POSEIDON (MMXXIII - Limited Edition for Horizon): Copa -> €4.80 | Botella -> €24.00
+- QUINTA DE COUSELO: Botella -> €27.00
+- MAR DE FRADES: Botella -> €31.00
+- VERDEJO HOMBRE PEZ: Copa -> €4.80 | Botella -> €24.00
+- MOCEN (Special Selection): Botella -> €26.00
+- FLOR DE VETUS: Botella -> €28.00
+- VIÑA ZORZAL (Chardonnay): Copa -> €4.80 | Botella -> €24.00
+- CASILLA DEL GUAPO (Sauvignon Blanc): Copa -> €4.80 | Botella -> €24.00
+- GODELLO O LUAR DO SIL: Botella -> €29.00
+- MALVASÍA CAN RICH (IGP Ibiza): Botella -> €25.00
+- IBIZKUS WHITE: Botella -> €30.00
+- PINOT GRIGIO MONTELLIANA (Italy): Botella -> €25.00
+
+[VINOS ROSADOS / ROSÉ WINES]
+- RAMÓN BILBAO (Garnacha): Copa -> €4.90 | Botella -> €25.00
+- CAN RICH BES (Monastrell - Ibiza): Botella -> €28.00
+- IBIZKUS ROSÉ (Ibiza): Botella -> €31.00
+- AIX ROSE (Francia - Grenache/Cinsaut/Syrah): Botella -> €33.00
+
+[VINOS TINTOS / RED WINES]
+- ORUBE CRIANZA (Rioja - Tempranillo/Garnacha/Graciano): Copa -> €4.80 | Botella -> €24.00
+- MARQUES DE RISCAL RESERVA (Rioja): Botella -> €29.00
+- MUGA CRIANZA (Rioja): Botella -> €31.00
+- CONTINO RESERVA (Rioja): Botella -> €53.50
+- CRUZ DE ALBA ROBLE (Ribera del Duero): Copa -> €4.90 | Botella -> €25.00
+- CONDE SAN CRISTOBAL CRIANZA (Ribera del Duero): Botella -> €29.00
+- PAGO DE CAPELLANES CRIANZA (Ribera del Duero): Botella -> €44.00
+- CAN BASSÓ MONASTRELL (IGP Ibiza): Botella -> €26.00
+
+[CAVAS & CHAMPAGNE]
+- LACRIMAS BACCUS BRUT CAVA: Copa -> €5.30 | Botella -> €29.00
+- PRIVAT LAIETÀ CAVA: Botella -> €37.00
+- PROSECCO ASOLO SUPERIORE EXTRA DRY: Copa -> €5.30 | Botella -> €29.00
+- TORRESELLA ROSÉ GLERA: Botella -> €28.00
+- MOËT & CHANDON IMPÉRIAL BRUT: Botella -> €95.00
+- MOËT & CHANDON ICE IMPÉRIAL DEMI-SEC: Botella -> €125.00
+- MOËT & CHANDON ICE IMPÉRIAL ROSÉ DEMI-SEC: Botella -> €125.00
+
+[SANGRÍAS]
+- SANGRÍA DE VINO (WINE SANGRIA): Copa -> €6.00 | Jarra (Pitcher) -> €24.00
+- SANGRÍA DE CAVA (CAVA SANGRIA): Copa -> €11.50 | Jarra (Pitcher) -> €36.50
+
+[COCKTAILS] -> Precio único €11.50 (excepto Aperol Spritz -> €9.50)
+- APEROL SPRITZ (Aperol, cava, soda) -> €9.50
+- MOSCOW MULE (Vodka, gingerbeer, lima, angostura) -> €11.50
+- BLOODY MARY (Vodka, zumo de tomate, especias) -> €11.50
+- PIÑA COLADA (Ron, malibú, coco, zumo de piña) -> €11.50
+- MOJITO (Ron, lima, hierbabuena, soda) -> €11.50
+- CAIPIRINHA (Cachaça, lima, azúcar moreno, hielo picado) -> €11.50
+- STRAWBERRY DAIQUIRI (Ron, fresas) -> €11.50
+- COCO LOCO (Ron, malibú, coco) -> €11.50
+- MARGARITA (Tequila, cointreau, lima) -> €11.50
+- ESPRESSO MARTINI (Vodka, tia maria, café espresso) -> €11.50
+- SEX ON THE BEACH (Vodka, licor de melocotón, zumo de naranja) -> €11.50
+
+Por favor, revisa el archivo de estilos (CSS) actual del proyecto para asegurarte de que los colores y tipografías se integren perfectamente de forma armónica. ¡Genera el código completo ya estructurado!
