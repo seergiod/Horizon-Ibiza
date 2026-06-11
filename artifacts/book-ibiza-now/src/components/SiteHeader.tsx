@@ -55,21 +55,20 @@ export function SiteHeader() {
         className="fixed inset-x-0 top-0 z-40"
         animate={reduce ? {} : {
           y: visible ? 0 : -80,
-          backdropFilter: scrolled ? "blur(20px) saturate(180%)" : "blur(0px)",
-          backgroundColor: scrolled ? "oklch(1 0 0 / 0.93)" : "oklch(1 0 0 / 0)",
-          borderBottomColor: scrolled ? "oklch(0.89 0.018 248 / 0.9)" : "oklch(0.89 0.018 248 / 0)",
+          backdropFilter: scrolled ? "blur(20px) saturate(180%)" : "blur(12px) saturate(120%)",
+          backgroundColor: scrolled ? "oklch(1 0 0 / 0.95)" : "oklch(1 0 0 / 0.82)",
+          borderBottomColor: scrolled ? "oklch(0.89 0.018 248 / 0.9)" : "oklch(0.89 0.018 248 / 0.4)",
         }}
         transition={{ duration: 0.3, ease: ease.out }}
         style={{ borderBottomWidth: 1, borderBottomStyle: "solid" }}
       >
-        <div className="mx-auto flex max-w-screen-lg items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-screen-lg items-center justify-between px-4 py-2.5">
           {/* Logo */}
           <Link to="/" className="flex items-center" onClick={() => setMenuOpen(false)}>
             <img
               src="/logo-transparent.png"
               alt="Horizon Ibiza"
               className="h-10 w-auto object-contain"
-              style={{ filter: scrolled ? "none" : "brightness(0) invert(1) drop-shadow(0 1px 6px rgba(0,0,0,0.7))" }}
             />
           </Link>
 
@@ -79,8 +78,7 @@ export function SiteHeader() {
               <Link
                 key={to}
                 to={to}
-                className="rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-secondary hover:text-foreground"
-                style={{ color: scrolled ? undefined : "rgba(255,255,255,0.75)" }}
+                className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary"
               >
                 {label}
               </Link>
